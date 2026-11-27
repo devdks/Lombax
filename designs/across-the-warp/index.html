@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eee9dc">
+  <title>Across the Warp</title>
+  <meta name="description" content="Work a handloom and watch straight threads build a diagonal in 2/2 twill.">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="page-edge mast">
+    <a class="back" href="../"><span aria-hidden="true">←</span> Back to the vault</a>
+  </header>
+
+  <main class="page-edge composition">
+    <section class="intro" aria-labelledby="title">
+      <p class="notation"><span aria-hidden="true"></span> 2/2 twill</p>
+      <h1 id="title"><span>Across</span> <span>the Warp</span></h1>
+      <p class="lede">Send a gold thread straight across. Watch the cloth grow a diagonal.</p>
+    </section>
+
+    <figure class="loom">
+      <figcaption class="loom-instructions" id="loom-instructions">
+        <span><strong id="step-label">Pass the shuttle</strong><span id="step-detail">Drag across or tap.</span></span>
+        <span class="keys"><kbd>Enter</kbd> <span>or</span> <kbd>Space</kbd></span>
+      </figcaption>
+
+      <div class="stage">
+        <canvas aria-hidden="true"></canvas>
+        <button type="button" class="loom-control" aria-describedby="loom-instructions" disabled>Pass the shuttle</button>
+      </div>
+
+      <div class="loom-footer">
+        <div class="legend">
+          <span><i class="warp-key" aria-hidden="true"></i>Indigo warp</span>
+          <span><i class="weft-key" aria-hidden="true"></i>Gold weft</span>
+        </div>
+        <span id="count">0 rows added</span>
+      </div>
+      <p class="sr-only" id="status" role="status"></p>
+      <noscript><p>Enable JavaScript to work the loom.</p></noscript>
+    </figure>
+
+    <section class="draft" aria-labelledby="draft-title">
+      <h2 id="draft-title">Read the weave</h2>
+      <p>The gold weft goes over two blue warp threads, then under two. Every new row shifts one thread to the right.</p>
+      <div class="draft-sample" aria-hidden="true">
+        <div class="draft-grid"></div>
+        <span>Next row</span>
+      </div>
+      <button type="button" class="reset" disabled><span aria-hidden="true">↺</span> Start over</button>
+    </section>
+  </main>
+
+  <script type="module" src="./loom.js"></script>
+</body>
+</html>
