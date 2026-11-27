@@ -18,8 +18,10 @@ const fragmentShader = /* glsl */ `
   uniform float hasArt;
   uniform vec3 tint;
   uniform vec2 look;
+  uniform vec2 flight;
   uniform float tick;
   uniform float reveal;
+  uniform float opacity;
   varying vec3 sphere;
 
   void main() {
@@ -31,10 +33,12 @@ const fragmentShader = /* glsl */ `
     float diffuse = max(dot(n, light), 0.0);
     float rim = pow(1.0 - max(0.0, n.z), 3.1);
     float glint = pow(max(0.0, dot(n, normalize(light + vec3(0.0, 0.0, 1.0)))), 21.0);
-    float pulse = 0.94 + sin(tick * 1.3) * 0.06;
+    float pulse = 0.91 + sin(tick * 3.8) * 0.09;
+    float heat = pow(max(0.0, dot(n.xy, flight)), 2.5) * rim * pulse;
     vec3 color = artwork * (0.46 + diffuse * 0.43 + n.z * 0.14)
-      + tint * (rim * (0.14 + diffuse * 0.53) * pulse + glint * (0.11 + reveal * 0.09));
-    gl_FragColor = vec4(color, 1.0);
+      + tint * (rim * (0.14 + diffuse * 0.53) + glint * (0.11 + reveal * 0.09))
+      + mix(tint, vec3(1.0), 0.45) * heat * 0.82;
+    gl_FragColor = vec4(color, opacity);
     #include <colorspace_fragment>
   }
 `
@@ -62,8 +66,10 @@ export function createSpace(canvas, projects, invalidate) {
       hasArt: { value: 0 },
       tint: { value: new Color(project.color) },
       look: { value: new Vector2() },
+      flight: { value: new Vector2() },
       tick: { value: 0 },
       reveal: { value: 0 },
+      opacity: { value: 1 },
     }
     loader.load(project.image, texture => {
       texture.colorSpace = SRGBColorSpace
@@ -73,7 +79,7 @@ export function createSpace(canvas, projects, invalidate) {
       project.button.dataset.artReady = ''
       invalidate()
     })
-    const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader })
+    const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader, transparent: true })
     const body = new Mesh(geometry, material)
     scene.add(body)
     return body
@@ -94,7 +100,8 @@ export function createSpace(canvas, projects, invalidate) {
   function draw(projects, time, lookX, lookY) {
     projects.forEach((project, index) => {
       const body = bodies[index]
-      body.visible = project.visible
+      body.visible = project.visible && project.x + project.r > 0 && project.x - project.r < width
+        && project.y + project.r > 0 && project.y - project.r < height
       if (!body.visible) return
       const z = project.depth + project.reveal * 225
       const scale = (distance - z) / distance
@@ -102,8 +109,10 @@ export function createSpace(canvas, projects, invalidate) {
       body.scale.setScalar(project.r * scale * .984)
       const { uniforms } = body.material
       uniforms.look.value.set(-lookX * .105 + Math.sin(time * .47 + index) * .025, lookY * .09)
+      uniforms.flight.value.set(-Math.cos(project.heading), Math.sin(project.heading))
       uniforms.tick.value = time + index * .59
       uniforms.reveal.value = project.reveal
+      uniforms.opacity.value = project.alpha
     })
     renderer.render(scene, camera)
   }

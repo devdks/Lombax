@@ -1,17 +1,50 @@
 import { createDust } from './comet-dust.js'
 
 const flightPaths = [
-  { wide: [59, 43, 134], narrow: [26, 46, 89], color: '#93aaff', depth: 52, angle: -.58 },
-  { wide: [81, 30, 106], narrow: [73, 40, 75], color: '#c1afff', depth: -88, angle: -.62 },
-  { wide: [83, 64, 128], narrow: [74, 71, 86], color: '#f1c87d', depth: 15, angle: -.61 },
-  { wide: [54, 72, 99], narrow: [28, 76, 72], color: '#f0a48c', depth: -28, angle: -.50 },
-  { wide: [57, 40, 124], narrow: [27, 39, 84], color: '#e1ad89', depth: 25, angle: -.59 },
-  { wide: [81, 34, 119], narrow: [73, 50, 80], color: '#8de1d4', depth: -58, angle: -.57 },
-  { wide: [74, 70, 110], narrow: [31, 69, 83], color: '#a2b8ff', depth: 6, angle: -.56 },
-  { wide: [51, 67, 104], narrow: [74, 77, 75], color: '#e1a8c9', depth: -15, angle: -.49 },
+  { wide: [59, 43, 134], narrow: [26, 46, 89], color: '#93aaff', depth: 52, angle: -.71 },
+  { wide: [81, 30, 106], narrow: [73, 40, 75], color: '#c1afff', depth: -88, angle: -.84 },
+  { wide: [83, 64, 128], narrow: [74, 71, 86], color: '#f1c87d', depth: 15, angle: -.70 },
+  { wide: [54, 72, 99], narrow: [28, 76, 72], color: '#f0a48c', depth: -28, angle: -.63 },
+  { wide: [57, 40, 124], narrow: [27, 39, 84], color: '#e1ad89', depth: 25, angle: -.74 },
+  { wide: [81, 34, 119], narrow: [73, 50, 80], color: '#8de1d4', depth: -58, angle: -.82 },
+  { wide: [74, 70, 110], narrow: [31, 69, 83], color: '#a2b8ff', depth: 6, angle: -.67 },
+  { wide: [51, 67, 104], narrow: [74, 77, 75], color: '#e1a8c9', depth: -15, angle: -.62 },
 ]
 
 const storageKey = 'lombax-vault-dimensions'
+const previewFrames = [
+  { clipPath: 'inset(49.6% 0)', opacity: 0 },
+  { clipPath: 'inset(0)', opacity: 1 },
+]
+
+function easeBetween(start, end, value) {
+  const t = Math.min(1, Math.max(0, (value - start) / (end - start)))
+  return t * t * (3 - 2 * t)
+}
+
+function orbitPose(bounds, index, scroll, height) {
+  const field = bounds[index]
+  const localScroll = scroll - field.top
+  const lastRest = Math.max(0, field.height - height)
+  if (localScroll < 0 && index > 0) {
+    const duration = Math.min(bounds[index - 1].height, height)
+    const progress = Math.max(0, 1 + localScroll / duration)
+    return {
+      entering: true, progress, offset: localScroll,
+      alpha: easeBetween(.03, .38, progress),
+      caption: easeBetween(.40, .91, progress),
+    }
+  }
+  if (localScroll > lastRest && index < bounds.length - 1) {
+    const progress = Math.min(1, (localScroll - lastRest) / (field.height - lastRest))
+    return {
+      entering: false, progress, offset: localScroll - lastRest,
+      alpha: 1 - easeBetween(.63, .95, progress),
+      caption: 1 - easeBetween(.03, .53, progress),
+    }
+  }
+  return null
+}
 
 export function mountCometVault(previewArt) {
   const archive = document.querySelector('.plate-vault')
@@ -47,7 +80,7 @@ export function mountCometVault(previewArt) {
     group.setAttribute('aria-label', start === end ? 'Project ' + start : `Projects ${start} through ${end}`)
     return group
   })
-  const dust = createDust(sky.querySelector('.sky-dust'))
+  const dust = createDust(sky.querySelector('.sky-dust'), sky.querySelector('.sky-plasma'))
   if (!dust) return
   const spaceCanvas = sky.querySelector('.sky-space')
   const preview = sky.querySelector('.comet-preview')
@@ -110,6 +143,10 @@ export function mountCometVault(previewArt) {
   })
 
   let active = null
+  let openedByHover = false
+  let closing = false
+  let dismissTimer
+  let previewMotion
   let focusOnClose = false
   let mode = '2d'
   let space
@@ -120,11 +157,12 @@ export function mountCometVault(previewArt) {
   let time = 0
   let width = 0
   let height = 0
+  let lastScroll = 0
+  let scrollSpeed = 0
   let previewWidth = 0
   let previewHeight = 0
   let mastheadHeight = 0
   let fieldBounds = []
-  let selectedSide = 0
   let sceneVisible = false
   let layoutDirty = true
   let pointerX = 0
@@ -137,11 +175,16 @@ export function mountCometVault(previewArt) {
   }
 
   function resetPreview(restoreFocus = false) {
+    clearTimeout(dismissTimer)
     if (!active) return
     const { button } = active
     button.setAttribute('aria-expanded', 'false')
     preview.hidden = true
+    preview.inert = false
+    previewMotion?.cancel()
+    previewMotion = null
     active = null
+    closing = false
     if (restoreFocus) {
       focusOnClose = true
       button.focus({ preventScroll: true })
@@ -150,11 +193,16 @@ export function mountCometVault(previewArt) {
     invalidate()
   }
 
-  function choose(project) {
-    if (active === project) return
+  function choose(project, byHover = false) {
+    clearTimeout(dismissTimer)
+    if (active === project) {
+      if (!byHover) openedByHover = false
+      if (closing) revealPreview(project)
+      return
+    }
     resetPreview()
     active = project
-    project.button.setAttribute('aria-expanded', 'true')
+    openedByHover = byHover
     previewImage.src = project.image
     preview.querySelector('.comet-preview-plate').textContent = project.number
     preview.querySelector('#comet-title').textContent = project.title
@@ -163,28 +211,83 @@ export function mountCometVault(previewArt) {
     link.href = project.href
     project.button.after(preview)
     preview.hidden = false
-    preview.removeAttribute('data-reveal')
     previewWidth = preview.offsetWidth
     previewHeight = preview.offsetHeight
-    selectedSide = project.button.getBoundingClientRect().left > window.innerWidth * .48 ? -1 : 1
-    preview.setAttribute('data-reveal', '')
+    revealPreview(project)
+  }
+
+  function revealPreview(project) {
+    closing = false
+    preview.inert = false
+    project.button.setAttribute('aria-expanded', 'true')
+    if (previewMotion) {
+      previewMotion.onfinish = null
+      previewMotion.reverse()
+    } else if (!reduced.matches) {
+      previewMotion = animatePreview()
+    }
     invalidate()
+  }
+
+  function animatePreview() {
+    return preview.animate(previewFrames, {
+      duration: 390, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'both',
+    })
+  }
+
+  function dismissAfterHover() {
+    clearTimeout(dismissTimer)
+    if (!active || !openedByHover || closing) return
+    const project = active
+    // Allow the pointer to cross the connector to the project link.
+    dismissTimer = setTimeout(() => {
+      if (active !== project || project.button.matches(':hover, :focus-visible')
+        || preview.matches(':hover, :focus-within')) return
+      if (reduced.matches) return resetPreview()
+      closing = true
+      project.button.setAttribute('aria-expanded', 'false')
+      preview.inert = true
+      if (!previewMotion) {
+        previewMotion = animatePreview()
+        previewMotion.finish()
+      }
+      previewMotion.onfinish = () => {
+        if (active === project && closing) resetPreview()
+      }
+      previewMotion.reverse()
+      invalidate()
+    }, 230)
   }
 
   projects.forEach(project => {
     project.button.addEventListener('pointerenter', event => {
-      if (event.pointerType === 'mouse' && !preview.contains(document.activeElement)) choose(project)
+      if (event.pointerType !== 'mouse') return
+      if ((active === project || scrollSpeed < .12) && !preview.contains(document.activeElement)) choose(project, true)
+    })
+    project.button.addEventListener('pointerleave', event => {
+      if (event.pointerType === 'mouse' && active === project) dismissAfterHover()
     })
     project.button.addEventListener('focus', () => {
       if (focusOnClose || !project.button.matches(':focus-visible')) return
       const bounds = project.button.getBoundingClientRect()
-      if (bounds.top < masthead.offsetHeight + 10 || bounds.bottom + 48 > window.innerHeight) {
-        project.button.scrollIntoView({ block: 'center', behavior: 'instant' })
+      if (project.inFlight || bounds.top < masthead.offsetHeight + 10 || bounds.bottom + 48 > window.innerHeight) {
+        const field = fields[project.field]
+        const [, top] = narrow.matches ? project.narrow : project.wide
+        const within = Math.min(field.offsetHeight - window.innerHeight, field.offsetHeight * top / 100 - window.innerHeight * .55)
+        window.scrollTo({ top: field.offsetTop + Math.max(0, within), behavior: 'instant' })
       }
       choose(project)
     })
-    project.button.addEventListener('click', () => choose(project))
+    project.button.addEventListener('click', event => choose(project, event.pointerType === 'mouse'))
   })
+  preview.addEventListener('pointerenter', event => {
+    if (event.pointerType === 'mouse') clearTimeout(dismissTimer)
+  })
+  preview.addEventListener('pointerleave', event => {
+    if (event.pointerType === 'mouse') dismissAfterHover()
+  })
+  preview.addEventListener('focusin', () => clearTimeout(dismissTimer))
+  preview.addEventListener('focusout', dismissAfterHover)
   close.addEventListener('click', () => resetPreview(true))
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && active) {
@@ -199,17 +302,19 @@ export function mountCometVault(previewArt) {
   function placePreview(project) {
     const mobile = narrow.matches && (height > 490 || width < 450)
     const margin = narrow.matches ? 16 : 30
+    const { anchorX, anchorY, selectedRadius } = project
+    const side = anchorX > width * .48 ? -1 : 1
     const left = mobile
       ? (width - previewWidth) / 2
       : Math.max(margin, Math.min(width - previewWidth - margin,
-        selectedSide === -1 ? project.x - project.r - 56 - previewWidth : project.x + project.r + 56))
-    const above = mobile && project.y > height * .57
-    let top = project.y - previewHeight * .5
-    if (mobile) top = above ? project.y - project.r - previewHeight - 34 : height - previewHeight - margin
+        side === -1 ? anchorX - selectedRadius - 56 - previewWidth : anchorX + selectedRadius + 56))
+    const above = mobile && anchorY > height * .57
+    let top = anchorY - previewHeight * .5
+    if (mobile) top = above ? anchorY - selectedRadius - previewHeight - 34 : height - previewHeight - margin
     top = Math.max(mastheadHeight + 11, Math.min(height - previewHeight - margin, top))
     preview.style.left = left + 'px'
     preview.style.top = top + 'px'
-    return { left, top, width: previewWidth, height: previewHeight, mobile, above, side: selectedSide }
+    return { left, top, width: previewWidth, height: previewHeight, mobile, above, side }
   }
 
   function render(now) {
@@ -231,32 +336,67 @@ export function mountCometVault(previewArt) {
     }
     const scroll = window.scrollY
     const spatial = mode === '3d'
+    const compact = narrow.matches
     const ease = 1 - Math.exp(-step * 10)
     lookX += (pointerX - lookX) * ease
     lookY += (pointerY - lookY) * ease
+    const velocity = Math.min(1, Math.abs(scroll - lastScroll) / (step * 1600))
+    scrollSpeed = still ? 0 : scrollSpeed + (velocity - scrollSpeed) * ease
+    lastScroll = scroll
+    const poses = fields.map((field, index) => {
+      const pose = still ? null : orbitPose(fieldBounds, index, scroll, height)
+      field.style.setProperty('--orbit-offset', (pose?.offset ?? 0) + 'px')
+      field.style.setProperty('--orbit-caption', pose?.caption ?? 1)
+      field.toggleAttribute('data-caption-away', !!pose && pose.caption < .04)
+      return pose
+    })
 
     for (const project of projects) {
-      const [left, top, size] = narrow.matches ? project.narrow : project.wide
+      const [left, top, size] = compact ? project.narrow : project.wide
       const bounds = fieldBounds[project.field]
-      const selected = active === project
+      const pose = poses[project.field]
+      const selected = active === project && !closing
       project.reveal = still ? Number(selected) : project.reveal + (Number(selected) - project.reveal) * ease
+      const phase = time * (.94 + project.index % 3 * .13) + project.index * 1.81
+      const hover = still ? 0 : (compact ? 4 : 6) * (1 - project.reveal)
       const drift = spatial && !still ? 7 + (project.depth + 90) * .09 : 0
-      const dx = lookX * drift
-      const dy = lookY * drift
-      const scale = 1 + project.reveal * (spatial ? .29 : .15)
-      project.x = width * left / 100 + dx
-      project.y = bounds.top + bounds.height * top / 100 - scroll + dy
-      project.r = size * scale / 2
-      project.visible = project.y > -size * 2 && project.y < height + size * 2
-      if (project.visible) {
-        project.button.style.setProperty('--drift-x', dx + 'px')
-        project.button.style.setProperty('--drift-y', dy + 'px')
-        project.button.style.setProperty('--comet-scale', scale)
-        project.button.style.setProperty('--label-drop', (project.r - size / 2) + 'px')
+      const stagger = project.index % 4 * .029
+      let flight = 0
+      if (pose) {
+        flight = pose.entering
+          ? easeBetween(.03 + stagger, .97, pose.progress) - 1
+          : easeBetween(stagger, .90 + stagger, pose.progress)
       }
+      project.inFlight = Math.abs(flight) > .035
+      project.heading = project.angle - (compact ? .20 : 0)
+      const distance = flight * Math.min(width * (compact ? 1.75 : 1.36), height * 1.30)
+      const flightX = -Math.cos(project.heading) * distance
+      const flightY = -Math.sin(project.heading) * distance + (pose?.offset ?? 0)
+      const floatX = lookX * drift + Math.cos(phase) * hover * .78
+      const floatY = lookY * drift + Math.sin(phase) * hover
+      const lift = spatial ? .29 : .15
+      const scale = 1 + project.reveal * lift
+      project.anchorX = width * left / 100 + flightX
+      project.anchorY = bounds.top + bounds.height * top / 100 - scroll + flightY
+      project.selectedRadius = size * (1 + lift) / 2
+      project.x = project.anchorX + floatX
+      project.y = project.anchorY + floatY
+      project.r = size * scale / 2
+      project.alpha = pose?.alpha ?? 1
+      project.speed = pose ? scrollSpeed : 0
+      // A head below or left of the viewport can still have a visible flame.
+      project.visible = project.alpha > .003 && project.x > -size * 3.5 && project.x < width + size
+        && project.y > -size && project.y < height + size * 3.5
+      project.button.style.setProperty('--drift-x', (flightX + floatX) + 'px')
+      project.button.style.setProperty('--drift-y', (flightY + floatY) + 'px')
+      project.button.style.setProperty('--comet-scale', scale)
+      project.button.style.setProperty('--label-drop', (project.r - size / 2) + 'px')
+      project.button.style.setProperty('--comet-alpha', project.alpha)
+      project.button.toggleAttribute('data-far', project.alpha < .15)
     }
 
-    if (active && (active.y < mastheadHeight || active.y > height + active.r)) {
+    if (active && (active.alpha < .15 || active.y < mastheadHeight || active.y > height + active.r
+      || active.x < -active.r || active.x > width + active.r)) {
       resetPreview(preview.contains(document.activeElement))
     }
     const target = active ? placePreview(active) : null
@@ -363,7 +503,14 @@ export function mountCometVault(previewArt) {
     pointerY = event.clientY / window.innerHeight * 2 - 1
     invalidate()
   }, { passive: true })
-  reduced.addEventListener('change', invalidate)
+  reduced.addEventListener('change', () => {
+    if (reduced.matches) {
+      if (closing) resetPreview()
+      previewMotion?.cancel()
+      previewMotion = null
+    }
+    invalidate()
+  })
   document.addEventListener('visibilitychange', invalidate)
   sky.querySelectorAll('.sky-scroll').forEach(anchor => anchor.addEventListener('click', event => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
