@@ -118,7 +118,9 @@ for (const button of buttons) {
     url.searchParams.set('specimen', current)
     history.replaceState(history.state, '', url)
   })
+  button.disabled = false
 }
+openSpecimen.hidden = false
 for (const input of document.querySelectorAll('input[name=light]')) {
   input.addEventListener('change', () => setMode(input.value))
 }
