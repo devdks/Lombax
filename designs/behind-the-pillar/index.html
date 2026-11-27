@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#181215">
+  <meta name="description" content="Move a performer across a little theatre and see which seats lose the scene.">
+  <title>Behind the Pillar</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="shell house-bar">
+    <a class="back" href="../"><span aria-hidden="true">←</span> Design vault</a>
+    <span class="venue">The Lantern Room</span>
+  </header>
+
+  <main class="shell">
+    <div class="opening">
+      <h1>Behind the <em>Pillar</em></h1>
+      <p>Drag the mark across the stage to move the performer. See which seats lose sight of them, then pick a seat to look from there.</p>
+    </div>
+
+    <div class="workbench">
+      <figure class="seat-view" aria-labelledby="seat-title">
+        <figcaption class="view-caption">
+          <h2 id="seat-title">View from <span id="seat-name">B2</span></h2>
+          <span class="view-status" id="view-status" data-view="clear">Clear view</span>
+        </figcaption>
+        <canvas class="stage-view" id="stage-view" aria-hidden="true"></canvas>
+        <p class="seat-detail" id="seat-detail" role="status">The performer is visible from seat B2.</p>
+      </figure>
+
+      <section class="seat-plan" aria-labelledby="plan-title">
+        <div class="plan-heading">
+          <h2 id="plan-title">The stalls</h2>
+          <p id="seat-count">28 seats</p>
+        </div>
+
+        <div class="cue-label">
+          <label for="mark">Performer’s mark</label>
+          <output id="mark-position" for="mark" aria-live="off">1.8 m right of centre</output>
+        </div>
+
+        <div class="floor-plan" id="floor-plan">
+          <canvas id="plan-lines" aria-hidden="true"></canvas>
+          <input id="mark" type="range" min="-24" max="24" step="1" value="18" disabled>
+          <div class="cue-ends" aria-hidden="true"><span>Left wing</span><span>Centre stage</span><span>Right wing</span></div>
+          <span class="pillar-label" id="pillar-label" aria-hidden="true">Pillar</span>
+          <div id="seats" role="group" aria-label="Seats A1 to D7" aria-describedby="plan-help"></div>
+        </div>
+
+        <ul class="legend" aria-label="Seat visibility legend">
+          <li><i data-view="clear" aria-hidden="true"></i>Clear</li>
+          <li><i data-view="clipped" aria-hidden="true"></i>Clipped</li>
+          <li><i data-view="blocked" aria-hidden="true"></i>Blocked</li>
+        </ul>
+        <p id="plan-help" class="plan-help">Pick a seat. Use the arrow keys to move between seats.</p>
+        <noscript><p>Enable JavaScript to move the performer and look from a seat.</p></noscript>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./theatre.js"></script>
+</body>
+</html>

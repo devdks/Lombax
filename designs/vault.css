@@ -17,3 +17,9 @@
 .paragraph-plate h2 { font-size: clamp(36px, 6.5vw, 97px); }
 .paragraph-plate .open { flex: none; }
 @media (max-width: 600px) { .paragraph-preview { left: 5%; } }
+.pillar-plate { margin-top: 22px; background: #241920; color: #f7e6ce; }
+.pillar-plate::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(#160e17b8, transparent 31%, transparent 57%, #160e17eb); }
+.pillar-plate .pillar-preview { z-index: -2; }
+.pillar-plate .caption { gap: 12px; }
+.pillar-plate h2 { font-size: clamp(36px, 7vw, 100px); }
+.pillar-plate .open { flex: none; }
