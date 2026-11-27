@@ -1,4 +1,5 @@
-const duration = 1100
+export const coverPoint = { fluorite: .38, calcite: .44, willemite: .72 }
+export const arrivalKey = path => 'night-cabinet:arrival:' + path
 
 function smooth(progress, start, end) {
   const t = Math.max(0, Math.min(1, (progress - start) / (end - start)))
@@ -184,59 +185,181 @@ function calciteScene(ctx, width, height, image) {
   }
 }
 
-function willemiteScene(ctx, width, height, image, fluorescence) {
+function extractSurface(image, fluorescence) {
+  const rock = document.createElement('canvas')
   const glow = document.createElement('canvas')
-  glow.width = fluorescence.width
-  glow.height = fluorescence.height
-  const mask = glow.getContext('2d')
-  const originX = glow.width * .36
-  const originY = glow.height * .62
-  return progress => {
-    const close = smooth(progress, .08, .64)
-    const depart = smooth(progress, .70, 1)
-    const view = Math.min(width, height) * 1.06
-    const scale = view + (Math.max(width, height) * 2.45 - view) * close * (1 - .25 * depart)
-    const left = width / 2 - scale * .51
-    const top = height / 2 - scale * .53
-    const opacity = smooth(progress, 0, .17) * (1 - depart)
-    ctx.globalAlpha = opacity
-    ctx.fillStyle = '#0d100c'
-    ctx.fillRect(0, 0, width, height)
-    ctx.drawImage(image, left, top, scale, scale)
-    ctx.globalAlpha = opacity * smooth(progress, .12, .50) * .72
-    ctx.fillStyle = '#090e09'
-    ctx.fillRect(0, 0, width, height)
+  rock.width = glow.width = image.naturalWidth
+  rock.height = glow.height = image.naturalHeight
+  const rockContext = rock.getContext('2d')
+  const glowContext = glow.getContext('2d')
+  rockContext.drawImage(image, 0, 0)
+  glowContext.drawImage(fluorescence, 0, 0)
+  const rockPixels = rockContext.getImageData(0, 0, rock.width, rock.height)
+  const glowPixels = glowContext.getImageData(0, 0, glow.width, glow.height)
+  const roots = []
 
-    const radius = glow.width * (.022 + 1.12 * smooth(progress, .09, .67))
-    mask.globalCompositeOperation = 'copy'
-    mask.drawImage(fluorescence, 0, 0)
-    mask.globalCompositeOperation = 'destination-in'
-    const sweep = mask.createRadialGradient(originX, originY, radius * .53, originX, originY, radius)
-    sweep.addColorStop(0, '#fff')
-    sweep.addColorStop(1, 'transparent')
-    mask.fillStyle = sweep
-    mask.fillRect(0, 0, glow.width, glow.height)
-    ctx.globalAlpha = opacity
-    ctx.globalCompositeOperation = 'screen'
-    ctx.drawImage(glow, left, top, scale, scale)
-    ctx.globalCompositeOperation = 'source-over'
+  for (let y = 0; y < rock.height; y++) {
+    for (let x = 0; x < rock.width; x++) {
+      const i = (y * rock.width + x) * 4
+      const stone = rockPixels.data
+      const uv = glowPixels.data
+      stone[i + 3] = Math.max(stone[i], stone[i + 1], stone[i + 2]) * 19
+      const green = uv[i + 1] - Math.max(uv[i], uv[i + 2])
+      uv[i + 3] = (green - 12) * 5
+      if (green > 46 && x % 5 === 0 && y % 5 === 0) {
+        roots.push({ x: x / rock.width, y: y / rock.height })
+      }
+    }
+  }
+  rockContext.putImageData(rockPixels, 0, 0)
+  glowContext.putImageData(glowPixels, 0, 0)
+  return { rock, glow, roots }
+}
+
+function mossBrush(random) {
+  const brush = document.createElement('canvas')
+  brush.width = brush.height = 72
+  const ctx = brush.getContext('2d')
+  for (let i = 0; i < 155; i++) {
+    const angle = random() * Math.PI * 2
+    const radius = Math.sqrt(random()) * 32
+    const light = 22 + random() * 45
+    ctx.fillStyle = `hsl(${65 + random() * 26} 68% ${light}%)`
+    ctx.beginPath()
+    ctx.ellipse(36 + Math.cos(angle) * radius, 36 + Math.sin(angle) * radius,
+      1 + random() * 3, 1 + random() * 2, angle, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  return brush
+}
+
+function branchPoints(random, x, y, angle, distance, thickness) {
+  const count = Math.ceil(distance / 5)
+  const points = []
+  const dx = Math.cos(angle)
+  const dy = Math.sin(angle)
+  let drift = 0
+  let turn = 0
+  for (let i = 0; i <= count; i++) {
+    const t = i / count
+    turn = Math.max(-1.3, Math.min(1.3, .89 * turn + (random() - .5) * 1.1))
+    drift += turn * 7
+    const sway = Math.sin(t * (5 + thickness * .17)) * thickness * Math.min(1, 4 * t)
+    const offset = i === 0 ? 0 : drift + sway
+    const radius = thickness * (.53 + random() * .38) * (1 - .54 * t)
+    points.push({ x: x + dx * t * distance - dy * offset, y: y + dy * t * distance + dx * offset, radius })
+  }
+  return points
+}
+
+function mossBranches(random, roots, rect, width, height) {
+  const branches = []
+  const thickness = Math.max(22, Math.min(52, Math.min(width, height) * .062))
+  const count = 13
+  for (let i = 0; i < count; i++) {
+    const angle = (i + .7 * random()) * 2 * Math.PI / count
+    const dx = Math.cos(angle)
+    const dy = Math.sin(angle)
+    // Start on a real fluorescent patch near the edge in this direction.
+    let root = { x: .5, y: .5 }
+    let best = -Infinity
+    for (const point of roots) {
+      const x = point.x - .5
+      const y = point.y - .5
+      const score = dx * x + dy * y - Math.abs(dx * y - dy * x) * .42
+      if (score > best) {
+        best = score
+        root = point
+      }
+    }
+    const x = rect.x + root.x * rect.w
+    const y = rect.y + root.y * rect.h
+    const edge = Math.min((dx > 0 ? width - x : -x) / dx, (dy > 0 ? height - y : -y) / dy)
+    const length = Math.max(33, edge + 40 + random() * 87)
+    const start = .23 + random() * .095
+    const points = branchPoints(random, x, y, angle, length, thickness * (.66 + random() * .64))
+    branches.push({ points, start, end: .56 + random() * .14 })
+    for (const fraction of [.24, .46, .67]) {
+      const fork = points[Math.floor(fraction * (points.length - 1))]
+      const spread = (random() > .5 ? 1 : -1) * (.64 + random() * .70)
+      const twig = branchPoints(random, fork.x, fork.y, angle + spread, length * (.18 + random() * .27), thickness * .56)
+      branches.push({ points: twig, start: start + fraction * .30, end: .62 + random() * .09 })
+    }
+  }
+  return branches
+}
+
+function willemiteScene(ctx, width, height, image, fluorescence, origin, seed) {
+  const random = randomSequence(seed)
+  const { rock, glow, roots } = extractSurface(image, fluorescence)
+  const brushes = Array.from({ length: 4 }, () => mossBrush(random))
+  const rect = { x: origin.x * width, y: origin.y * height, w: origin.w * width, h: origin.h * height }
+  const branches = mossBranches(random, roots, rect, width, height)
+
+  return progress => {
+    const scrim = smooth(progress, .36, coverPoint.willemite) * (1 - smooth(progress, .72, .94))
+    const clear = 1 - smooth(progress, .75, 1)
+    ctx.globalAlpha = scrim
+    ctx.fillStyle = '#10130c'
+    ctx.fillRect(0, 0, width, height)
+    ctx.globalAlpha = scrim
+    ctx.drawImage(rock, rect.x, rect.y, rect.w, rect.h)
+
+    const pulseIn = smooth(progress, 0, .14)
+    const pulseOut = 1 - smooth(progress, .15, .29) * .51
+    ctx.globalAlpha = pulseIn * pulseOut * clear
+    ctx.shadowColor = '#a4ff37'
+    ctx.shadowBlur = 15 * pulseIn * pulseOut
+    ctx.drawImage(glow, rect.x, rect.y, rect.w, rect.h)
+    ctx.shadowBlur = 0
+
+    ctx.globalAlpha = clear
+    for (const { points, start, end } of branches) {
+      const tip = points.length * smooth(progress, start, end)
+      for (let i = 0; i < Math.floor(tip); i++) {
+        const { x, y, radius } = points[i]
+        ctx.drawImage(brushes[i % brushes.length], x - radius, y - radius, radius * 2, radius * 2)
+      }
+    }
     ctx.globalAlpha = 1
   }
 }
 
 const scenes = { fluorite: fluoriteScene, calcite: calciteScene, willemite: willemiteScene }
 
-export function playArrival(canvas, mineral, image, fluorescence, reduceMotion) {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
+export function imageArea(image) {
+  const rect = image.getBoundingClientRect()
+  const style = getComputedStyle(image)
+  const left = parseFloat(style.paddingLeft)
+  const top = parseFloat(style.paddingTop)
+  const availableWidth = rect.width - left - parseFloat(style.paddingRight)
+  const availableHeight = rect.height - top - parseFloat(style.paddingBottom)
+  const scale = Math.min(availableWidth / image.naturalWidth, availableHeight / image.naturalHeight)
+  const w = image.naturalWidth * scale
+  const h = image.naturalHeight * scale
+  return {
+    x: (rect.left + left + (availableWidth - w) / 2) / innerWidth,
+    y: (rect.top + top + (availableHeight - h) / 2) / innerHeight,
+    w: w / innerWidth,
+    h: h / innerHeight,
+  }
+}
 
+export function playArrival(canvas, mineral, image, fluorescence, {
+  from = 0, to = 1, seed = 43217, origin, onCover, onDraw,
+} = {}) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return false
+
+  const duration = mineral === 'willemite' ? 1750 : 1100
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)')
   const listeners = new AbortController()
   const options = { signal: listeners.signal }
   let frame
   let draw
   let width = 0
   let height = 0
-  const start = performance.now()
+  const start = performance.now() - from * duration
 
   function finish() {
     cancelAnimationFrame(frame)
@@ -245,11 +368,7 @@ export function playArrival(canvas, mineral, image, fluorescence, reduceMotion) 
   }
 
   function tick(now) {
-    const progress = (now - start) / duration
-    if (progress >= 1) {
-      finish()
-      return
-    }
+    const progress = Math.min(to, Math.max(from, (now - start) / duration))
     if (width !== canvas.clientWidth || height !== canvas.clientHeight) {
       width = canvas.clientWidth
       height = canvas.clientHeight
@@ -257,17 +376,30 @@ export function playArrival(canvas, mineral, image, fluorescence, reduceMotion) 
       canvas.width = width * density
       canvas.height = height * density
       ctx.setTransform(density, 0, 0, density, 0, 0)
-      draw = scenes[mineral](ctx, width, height, image, fluorescence)
+      draw = scenes[mineral](ctx, width, height, image, fluorescence, origin, seed)
     }
     ctx.clearRect(0, 0, width, height)
     draw(progress)
-    frame = requestAnimationFrame(tick)
+    if (progress < to) {
+      frame = requestAnimationFrame(tick)
+    } else if (onCover) {
+      onCover(canvas)
+    } else {
+      finish()
+    }
   }
 
-  document.addEventListener('pointerdown', finish, options)
-  document.addEventListener('keydown', finish, options)
+  if (!onCover) {
+    document.addEventListener('pointerdown', finish, options)
+    document.addEventListener('keydown', finish, options)
+  }
   window.addEventListener('pagehide', finish, options)
-  reduceMotion.addEventListener('change', finish, options)
+  reduceMotion.addEventListener('change', () => {
+    finish()
+    onCover?.()
+  }, options)
   canvas.hidden = false
-  tick(start)
+  tick(performance.now())
+  onDraw?.()
+  return true
 }

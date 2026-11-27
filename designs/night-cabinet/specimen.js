@@ -1,5 +1,5 @@
 import { renderFluorescence, specimens } from './fluorescence.js'
-import { playArrival } from './arrival.js'
+import { coverPoint, imageArea, playArrival } from './arrival.js'
 
 const page = document.body
 const mineral = page.dataset.mineral
@@ -9,7 +9,12 @@ const lights = document.querySelector('fieldset')
 const reading = document.querySelector('#reading')
 const arrival = document.querySelector('#arrival')
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)')
-const restored = performance.getEntriesByType('navigation')[0]?.type === 'back_forward'
+const root = document.documentElement
+
+function uncover() {
+  root.classList.remove('opening')
+  root.style.removeProperty('--held-frame')
+}
 
 function setLight(mode) {
   page.dataset.light = mode
@@ -20,9 +25,13 @@ async function prepareSpecimen() {
   try {
     await image.decode()
   } catch {
+    uncover()
     return
   }
-  if (!renderFluorescence(image, fluorescence, mineral)) return
+  if (!renderFluorescence(image, fluorescence, mineral)) {
+    uncover()
+    return
+  }
 
   fluorescence.hidden = false
   page.dataset.ready = ''
@@ -31,9 +40,16 @@ async function prepareSpecimen() {
   setLight(initialLight)
   lights.addEventListener('change', event => setLight(event.target.value))
 
-  if (!reduceMotion.matches && !restored && !document.hidden) {
-    playArrival(arrival, mineral, image, fluorescence, reduceMotion)
-  }
+  const handoff = window.nightCabinetArrival
+  delete window.nightCabinetArrival
+  if (root.classList.contains('opening') && !reduceMotion.matches && !document.hidden &&
+    playArrival(arrival, mineral, image, fluorescence, {
+      from: coverPoint[mineral],
+      origin: handoff?.origin ?? imageArea(image),
+      seed: handoff?.seed,
+      onDraw: uncover,
+    })) return
+  uncover()
 }
 
 prepareSpecimen()

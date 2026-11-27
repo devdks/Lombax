@@ -6,6 +6,26 @@
   <meta name="theme-color" content="#131015">
   <title>Calcite — Night Cabinet</title>
   <link rel="stylesheet" href="../specimen.css">
+  <script>
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        performance.getEntriesByType('navigation')[0]?.type !== 'back_forward') {
+      const root = document.documentElement
+      root.classList.add('opening')
+      try {
+        const key = 'night-cabinet:arrival:' + location.pathname
+        const handoff = JSON.parse(sessionStorage.getItem(key))
+        sessionStorage.removeItem(key)
+        if (handoff && Date.now() - handoff.createdAt < 15000) {
+          window.nightCabinetArrival = { origin: handoff.origin, seed: handoff.seed }
+          if (handoff.frame) root.style.setProperty('--held-frame', 'url(' + handoff.frame + ')')
+        }
+      } catch {}
+      setTimeout(() => {
+        root.classList.remove('opening')
+        root.style.removeProperty('--held-frame')
+      }, 5000)
+    }
+  </script>
 </head>
 <body data-mineral="calcite" data-light="day">
   <header>
