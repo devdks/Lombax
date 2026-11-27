@@ -23,3 +23,9 @@
 .pillar-plate .caption { gap: 12px; }
 .pillar-plate h2 { font-size: clamp(36px, 7vw, 100px); }
 .pillar-plate .open { flex: none; }
+.tide-plate { margin-top: 22px; background: #164542; color: #f4f3d9; }
+.tide-plate img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.tide-plate::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, #102423 0%, #10242390 26%, transparent 57%, #102423a0 100%); }
+.tide-plate .caption { gap: 12px; }
+.tide-plate h2 { font-size: clamp(36px, 6.5vw, 97px); }
+.tide-plate .open { flex: none; }

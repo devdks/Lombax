@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102423">
+    <meta name="description" content="Explore a tidal causeway in 3D and find the last time you can walk to the lighthouse and back.">
+    <title>The Vanishing Road — A tidal crossing</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <header class="topline shell">
+      <a class="back" href="../">Back to Lombax</a>
+      <div class="location"><strong>Lantern Reach</strong><span>Fictional coastline</span></div>
+    </header>
+    <main>
+      <section class="coast" aria-label="Tidal crossing simulator">
+        <div class="scene" id="scene">
+          <img class="poster" src="./cover.webp" alt="" width="1350" height="750">
+          <div class="terrain" id="terrain" aria-hidden="true"></div>
+          <div class="places" hidden aria-hidden="true">
+            <span class="place" id="mainland">Mainland</span>
+            <span class="place" id="island">Lantern Island</span>
+            <span class="place saddle" id="saddle">Low point</span>
+          </div>
+        </div>
+        <div class="coast-content shell">
+          <div class="intro">
+            <h1>The Vanishing <span>Road</span></h1>
+            <p>At low tide, you can walk to the lighthouse. Will the road be there on your way back?</p>
+          </div>
+          <div class="map-tools">
+            <div class="compass" aria-hidden="true"><span>N</span><i></i></div>
+            <div class="view-switch" role="group" aria-label="Terrain view" hidden>
+              <button type="button" data-view="relief" aria-pressed="true">Relief</button>
+              <button type="button" data-view="plan" aria-pressed="false">Plan</button>
+            </div>
+          </div>
+          <div class="water-reading" id="water-reading">
+            <span id="water-label">Water at departure</span>
+            <div class="water-value"><strong id="water-height">0.51 m</strong><span id="tide-direction">Rising</span></div>
+            <button class="return-view" id="return-view" type="button" aria-pressed="false" hidden>View return tide</button>
+          </div>
+          <div class="verdict" id="verdict" data-status="cutoff">
+            <h2 id="verdict-title">Cut off on return</h2>
+            <p id="verdict-detail">At 14:05, part of the road is underwater when you reach it on the way back.</p>
+          </div>
+          <p class="fallback" id="fallback" hidden>3D is unavailable. The tide chart and trip still update.</p>
+        </div>
+      </section>
+      <div class="timeline shell">
+        <div class="timeline-header">
+          <div class="departure-reading"><label for="departure">Departure time</label><output id="departure-clock" for="departure" aria-live="off">12:55</output></div>
+          <button type="button" id="play" class="play"><i aria-hidden="true"></i><span>Play tide</span></button>
+        </div>
+        <div class="plot" id="plot">
+          <canvas id="tide-chart" aria-hidden="true"></canvas>
+          <input id="departure" type="range" min="0" max="720" value="415" step="1" aria-describedby="range-description">
+        </div>
+        <div class="ticks" aria-hidden="true"><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span></div>
+        <p class="sr-only" id="range-description">Choose a departure from 06:00 to 18:00. The lowest tide is at noon.</p>
+      </div>
+      <section class="passage shell" aria-label="The round trip">
+        <div class="route">
+          <div class="route-places"><span>Mainland</span><span>35 min on Lantern Island</span><span>Mainland</span></div>
+          <canvas id="route-chart" aria-hidden="true"></canvas>
+          <ol class="legs">
+            <li><span class="leg-name">To the island</span><span class="leg-time" id="out-time">12:55–13:19</span><span class="leg-status" id="out-status">Dry</span></li>
+            <li><span class="leg-name">Back to shore</span><span class="leg-time" id="back-time">13:54–14:18</span><span class="leg-status" id="back-status" data-state="covered">Flooded</span></li>
+          </ol>
+        </div>
+        <div class="window">
+          <button type="button" id="last-departure" aria-label="Set the last round-trip departure, 12:47">12:47</button>
+          <span>Last round-trip<br>departure</span>
+        </div>
+        <p id="announcement" class="sr-only" role="status"></p>
+      </section>
+    </main>
+    <footer class="shell">
+      <div class="legend"><span><i></i>Exposed road</span><span><i class="wet-key"></i>Underwater road</span><span><i class="low-key"></i>Low point on chart</span></div>
+      <details class="notes">
+        <summary>About the model</summary>
+        <p>Lantern Reach is fictional. The study uses a repeating 12-hour tide and compares water level with road height along each 24-minute crossing. The terrain is vertically exaggerated.</p>
+      </details>
+    </footer>
+    <script type="module" src="./study.js"></script>
+  </body>
+</html>
