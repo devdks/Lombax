@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ebe4d7">
+  <meta name="description" content="Cut a paragraph from a draft and see which phrases lose their meaning.">
+  <title>The Missing Paragraph</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="page-width topbar">
+    <a class="back" href="../"><span aria-hidden="true">←</span> Design vault</a>
+  </header>
+
+  <main class="page-width">
+    <div class="opening">
+      <h1>The Missing <em>Paragraph.</em></h1>
+      <p>Cut a paragraph from the draft. When a phrase loses its context, it turns red. Select it to read what went missing and decide what to keep.</p>
+    </div>
+
+    <article class="draft" aria-labelledby="draft-title">
+      <div class="draft-bar">
+        <span>Working draft</span>
+        <span class="totals" id="totals">0 cuts · 0 unresolved</span>
+        <button class="reset" id="reset" type="button" disabled>Reset draft</button>
+      </div>
+
+      <div class="paper">
+        <header class="draft-heading">
+          <h2 id="draft-title">Closing the darkroom</h2>
+          <p>A note for studio volunteers</p>
+        </header>
+
+        <section class="draft-section" aria-labelledby="last-print">
+          <h3 id="last-print">The last print</h3>
+          <div class="source" data-source="bell" data-title="The second bell">
+            <p id="bell-paragraph" class="source-copy">At 8:40 p.m., ring the second bell. It marks the end of new prints and leaves twenty minutes to finish rinsing.</p>
+            <p class="cut-gap" hidden>Paragraph removed</p>
+            <button class="cut" type="button" aria-controls="bell-paragraph" hidden>
+              <span class="cut-icon" aria-hidden="true">✂</span> <span class="cut-label">Cut paragraph</span>
+            </button>
+          </div>
+          <p class="prose">After <span data-reference="bell" data-rewrite="8:40 p.m.">the second bell</span>, finish the print you’re rinsing and switch off the enlargers.</p>
+        </section>
+
+        <section class="draft-section" aria-labelledby="wet-prints">
+          <h3 id="wet-prints">Wet prints</h3>
+          <div class="source" data-source="rack" data-title="The drying rack">
+            <p id="rack-paragraph" class="source-copy">The red rack in the hall is for prints that still need to dry. It stays accessible even after we lock the darkroom.</p>
+            <p class="cut-gap" hidden>Paragraph removed</p>
+            <button class="cut" type="button" aria-controls="rack-paragraph" hidden>
+              <span class="cut-icon" aria-hidden="true">✂</span> <span class="cut-label">Cut paragraph</span>
+            </button>
+          </div>
+          <p class="prose">Leave any wet prints <span data-reference="rack" data-rewrite="on the drying rack in the hall">on the red rack</span> and write your name on the clip.</p>
+        </section>
+
+        <section class="draft-section" aria-labelledby="lock-up">
+          <h3 id="lock-up">Locking up</h3>
+          <p class="prose">If someone arrives after <span data-reference="bell" data-rewrite="8:40 p.m.">the bell</span>, offer them a slot tomorrow. Check <span data-reference="rack" data-rewrite="the drying rack in the hall">the red rack</span> for unlabeled prints before you turn out the lights.</p>
+        </section>
+      </div>
+      <noscript><p class="noscript">Enable JavaScript to edit the draft.</p></noscript>
+    </article>
+
+    <p id="status" class="sr-only" role="status"></p>
+  </main>
+
+  <template id="annotation-template">
+    <section class="annotation" id="missing-context" aria-labelledby="annotation-title" hidden>
+      <div class="annotation-context">
+        <h4 id="annotation-title">What went missing</h4>
+        <blockquote class="removed-copy"></blockquote>
+        <button class="restore-from-note" type="button">Restore paragraph</button>
+      </div>
+      <div class="annotation-edit">
+        <h4>Make the phrase stand alone</h4>
+        <p class="rewrite-preview"><del></del> <span aria-hidden="true">→</span> <ins></ins></p>
+        <button class="accept-rewrite" type="button">Use this wording</button>
+      </div>
+    </section>
+  </template>
+
+  <script type="module" src="./editor.js"></script>
+</body>
+</html>
