@@ -10,7 +10,6 @@
 <body>
   <header class="mast">
     <a class="back" href="../"><span aria-hidden="true">←</span> Design vault</a>
-    <span class="plate">Lombax <i></i> Plate 002</span>
   </header>
   <main>
     <div class="exhibit">
@@ -35,14 +34,17 @@
         <figcaption><span id="specimen-caption">Fluorite <i>/</i> CaF₂</span><span id="help">Move the spot · drag or use arrow keys</span></figcaption>
       </figure>
     </div>
-    <section class="drawer" aria-labelledby="drawer-title">
+    <section class="drawer" id="drawer" tabindex="-1" aria-labelledby="drawer-title">
       <div class="drawer-heading"><h2 id="drawer-title">Specimen drawer</h2><span>03 specimens</span></div>
       <div class="specimens">
         <button type="button" data-mineral="fluorite" aria-pressed="true"><img src="./fluorite.jpg" alt=""><span><small>01 / Halide</small><strong>Fluorite</strong></span><i aria-hidden="true"></i></button>
         <button type="button" data-mineral="calcite" aria-pressed="false"><img src="./calcite.jpg" alt=""><span><small>02 / Carbonate</small><strong>Calcite</strong></span><i aria-hidden="true"></i></button>
         <button type="button" data-mineral="willemite" aria-pressed="false"><img src="./willemite.jpg" alt=""><span><small>03 / Silicate</small><strong>Willemite</strong></span><i aria-hidden="true"></i></button>
       </div>
-      <p class="note" aria-live="polite" id="note">This illustrated fluorite specimen fluoresces violet-blue under ultraviolet light.</p>
+      <div class="drawer-preview">
+        <p class="note" aria-live="polite" id="note">This illustrated fluorite specimen fluoresces violet-blue under ultraviolet light.</p>
+        <a class="open-specimen" id="open-specimen" href="./fluorite/"><span>Open Fluorite</span><b aria-hidden="true">↗</b></a>
+      </div>
     </section>
   </main>
   <footer>Illustrated specimens · simulated fluorescence <a href="https://www.franklinmineralmuseum.org/fluorescent-minerals/">Mineral reference ↗</a></footer>

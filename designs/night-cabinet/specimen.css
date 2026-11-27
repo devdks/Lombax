@@ -1,0 +1,125 @@
+:root {
+  color-scheme: dark;
+  background: #111013;
+  font-family: Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  --paper: #f3e9da;
+  --muted: #c4b7c8;
+  --accent: #dac0ff;
+  --line: #4b3b56;
+  --ambient: #24182d;
+  --mono: 'Courier New', monospace;
+  margin: 0 auto;
+  padding: 0 clamp(18px, 5vw, 84px);
+  max-width: 1600px;
+  color: var(--paper);
+}
+
+body[data-mineral=calcite] { --accent: #ffca9c; --line: #654635; --ambient: #2c1d17; }
+body[data-mineral=willemite] { --accent: #d4ed9a; --line: #47512f; --ambient: #202816; }
+a { color: inherit; }
+:focus-visible, input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 4px; }
+header { border-bottom: 1px solid var(--line); }
+.return {
+  min-height: 58px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .87rem;
+  text-decoration: none;
+}
+.return span { color: var(--accent); font-size: 1.2rem; }
+.return:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+.exhibit {
+  display: grid;
+  grid-template-columns: minmax(275px, .86fr) minmax(0, 1.4fr);
+  grid-template-areas: 'title specimen' 'note specimen';
+  column-gap: clamp(28px, 5vw, 86px);
+  min-height: calc(100svh - 59px);
+  padding: clamp(28px, 5vw, 72px) 0;
+}
+.introduction { grid-area: title; align-self: end; }
+.family, legend, .reading { font: .71rem/1.45 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.family { display: flex; align-items: center; gap: 10px; color: var(--accent); margin: 0 0 16px; }
+.family span { width: 22px; border-top: 1px solid var(--line); }
+h1 { font: 400 clamp(4rem, 7.55vw, 8.6rem)/.9 Georgia, serif; letter-spacing: -.078em; margin: 0; }
+.tagline { max-width: 22ch; margin: 17px 0 30px; color: var(--accent); font: italic clamp(1.18rem, 2vw, 1.7rem)/1.25 Georgia, serif; }
+
+figure { grid-area: specimen; align-self: center; min-width: 0; margin: 0; }
+.chamber {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.22;
+  max-height: 67svh;
+  border: 1px solid var(--line);
+  background: radial-gradient(ellipse at center, var(--ambient), #100e11 73%);
+}
+.chamber::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--line), var(--line)) top left / 18px 1px,
+    linear-gradient(var(--line), var(--line)) top left / 1px 18px,
+    linear-gradient(var(--line), var(--line)) bottom right / 18px 1px,
+    linear-gradient(var(--line), var(--line)) bottom right / 1px 18px;
+  background-repeat: no-repeat;
+}
+.specimen { position: absolute; inset: 6% 8%; mix-blend-mode: screen; }
+.specimen img, .specimen canvas { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: contain; }
+body[data-light=uv][data-ready] .specimen img { opacity: 0; }
+body[data-light=day] #fluorescence { visibility: hidden; }
+
+figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 14px;
+}
+fieldset { display: flex; gap: 4px; min-width: 0; margin: 0; padding: 0; border: 0; }
+legend { padding: 0; margin-bottom: 6px; color: var(--muted); }
+label { position: relative; cursor: pointer; }
+input { position: absolute; opacity: 0; }
+label span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  font-size: .85rem;
+}
+input:checked + span { color: #161216; background: var(--accent); border-color: var(--accent); }
+fieldset:enabled label:hover span { border-color: var(--accent); }
+fieldset:disabled { opacity: .5; }
+.reading { color: var(--accent); padding-bottom: 13px; }
+
+.annotation { grid-area: note; border-top: 1px solid var(--line); padding-top: 14px; }
+.annotation p { max-width: 36ch; margin: 0; color: var(--muted); line-height: 1.55; }
+.annotation .reference { margin-top: 17px; font-size: .75rem; }
+.reference a { text-underline-offset: 3px; }
+
+.arrival { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+
+@media (max-width: 760px) {
+  header .return { min-height: 52px; }
+  .exhibit { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'title' 'specimen' 'note'; min-height: 0; row-gap: 22px; padding: 24px 0 36px; }
+  h1 { font-size: clamp(3.55rem, 12vw, 6rem); }
+  .family { margin-bottom: 12px; }
+  .tagline { margin: 12px 0 0; max-width: none; }
+  .chamber { max-height: 52svh; }
+  .reading { padding-bottom: 9px; letter-spacing: .04em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrival { display: none; }
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#131015">
+  <title>Calcite — Night Cabinet</title>
+  <link rel="stylesheet" href="../specimen.css">
+</head>
+<body data-mineral="calcite" data-light="day">
+  <header>
+    <a class="return" href="../?specimen=calcite#drawer"><span aria-hidden="true">←</span> Specimen drawer</a>
+  </header>
+  <main>
+    <div class="exhibit">
+      <div class="introduction">
+        <p class="family">Carbonate <span></span> CaCO₃</p>
+        <h1>Calcite</h1>
+        <p class="tagline">A cluster of sharp, uneven points.</p>
+      </div>
+      <figure>
+        <div class="chamber">
+          <div class="specimen">
+            <img id="specimen" src="../calcite.jpg" alt="Ivory calcite crystals tapering to sharp points">
+            <canvas id="fluorescence" hidden aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <figcaption>
+          <fieldset disabled>
+            <legend>Illumination</legend>
+            <label><input type="radio" name="light" value="day" checked><span>Daylight</span></label>
+            <label><input type="radio" name="light" value="uv"><span>Ultraviolet</span></label>
+          </fieldset>
+          <span class="reading" id="reading">Daylight</span>
+        </figcaption>
+      </figure>
+      <div class="annotation">
+        <p>Trace the faces from the broad base to their narrow tips. This pointed crystal habit is called dogtooth spar. Under ultraviolet light, some calcite specimens glow orange-red.</p>
+        <p class="reference">Illustrated specimen · simulated fluorescence<br><a href="https://collections.st-andrews.ac.uk/item/dogtooth-calcite/1021247">University of St Andrews collection ↗</a></p>
+      </div>
+    </div>
+  </main>
+  <canvas id="arrival" class="arrival" hidden aria-hidden="true"></canvas>
+  <script type="module" src="../specimen.js"></script>
+</body>
+</html>

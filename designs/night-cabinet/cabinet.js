@@ -1,22 +1,10 @@
-const specimens = {
-  fluorite: {
-    name: 'Fluorite', formula: 'CaF₂', color: 'violet-blue', tint: [102, 82, 255],
-    alt: 'Intergrown lavender fluorite cubes with stepped faces',
-  },
-  calcite: {
-    name: 'Calcite', formula: 'CaCO₃', color: 'orange-red', tint: [255, 76, 33],
-    alt: 'Ivory calcite crystals tapering to sharp points',
-  },
-  willemite: {
-    name: 'Willemite', formula: 'Zn₂SiO₄', color: 'yellow-green', tint: [139, 255, 37],
-    alt: 'An irregular piece of dark rock mottled with olive willemite grains',
-  },
-}
+import { renderFluorescence, specimens } from './fluorescence.js'
+
 const frame = document.querySelector('#frame')
 const mineral = document.querySelector('#mineral')
 const emission = document.querySelector('#emission')
-const context = emission.getContext('2d', { willReadFrequently: true })
 const buttons = [...document.querySelectorAll('[data-mineral]')]
+const openSpecimen = document.querySelector('#open-specimen')
 const modeLabels = { day: 'Daylight', spot: 'UV spot', flood: 'UV flood' }
 let current = 'fluorite'
 let spot = { x: 56, y: 45 }
@@ -27,28 +15,8 @@ function moveSpot(x, y) {
   frame.style.setProperty('--y', spot.y + '%')
 }
 
-// Preserve the relief in the illustration. In willemite, illuminate the
-// yellow-green grains preferentially so the surrounding matrix stays dark.
 function renderEmission() {
-  emission.width = mineral.naturalWidth
-  emission.height = mineral.naturalHeight
-  context.drawImage(mineral, 0, 0)
-  const bitmap = context.getImageData(0, 0, emission.width, emission.height)
-  const pixels = bitmap.data
-  const { tint } = specimens[current]
-  for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i]
-    const g = pixels[i + 1]
-    const b = pixels[i + 2]
-    const light = (0.3 * r + 0.59 * g + 0.11 * b) / 255
-    const response = current === 'willemite' ? Math.min(1, Math.max(0, (g - b) / 42)) : 1
-    const intensity = Math.pow(light, 0.72) * response
-    for (let channel = 0; channel < 3; channel++) {
-      pixels[i + channel] = 1.5 * intensity * tint[channel] + 28 * light
-    }
-  }
-  context.putImageData(bitmap, 0, 0)
-  emission.hidden = false
+  emission.hidden = !renderFluorescence(mineral, emission, current)
 }
 
 function setMode(mode) {
@@ -64,22 +32,34 @@ function setMode(mode) {
   }[mode]
 }
 
+function selectSpecimen(button) {
+  if (!button || current === button.dataset.mineral) return
+  current = button.dataset.mineral
+  const specimen = specimens[current]
+  for (const item of buttons) item.setAttribute('aria-pressed', String(item === button))
+  emission.hidden = true
+  mineral.src = button.querySelector('img').src
+  mineral.alt = specimen.alt
+  document.querySelector('#fig').textContent = String(buttons.indexOf(button) + 1).padStart(2, '0')
+  document.querySelector('#specimen-caption').replaceChildren(specimen.name + ' ', Object.assign(document.createElement('i'), { textContent: '/' }), ' ' + specimen.formula)
+  document.querySelector('#note').textContent = 'This illustrated ' + current + ' specimen fluoresces ' + specimen.color + ' under ultraviolet light.'
+  openSpecimen.href = `./${current}/`
+  openSpecimen.querySelector('span').textContent = 'Open ' + specimen.name
+  moveSpot(56, 45)
+  setMode(frame.dataset.mode)
+}
+
 mineral.addEventListener('load', renderEmission)
+const initialSpecimen = new URLSearchParams(window.location.search).get('specimen')
+selectSpecimen(buttons.find(button => button.dataset.mineral === initialSpecimen))
 if (mineral.complete && mineral.naturalWidth) renderEmission()
-for (const [index, button] of buttons.entries()) {
+
+for (const button of buttons) {
   button.addEventListener('click', () => {
-    if (current === button.dataset.mineral) return
-    current = button.dataset.mineral
-    const specimen = specimens[current]
-    for (const item of buttons) item.setAttribute('aria-pressed', String(item === button))
-    emission.hidden = true
-    mineral.src = button.querySelector('img').src
-    mineral.alt = specimen.alt
-    document.querySelector('#fig').textContent = String(index + 1).padStart(2, '0')
-    document.querySelector('#specimen-caption').replaceChildren(specimen.name + ' ', Object.assign(document.createElement('i'), { textContent: '/' }), ' ' + specimen.formula)
-    document.querySelector('#note').textContent = 'This illustrated ' + current + ' specimen fluoresces ' + specimen.color + ' under ultraviolet light.'
-    moveSpot(56, 45)
-    setMode(frame.dataset.mode)
+    selectSpecimen(button)
+    const url = new URL(window.location.href)
+    url.searchParams.set('specimen', current)
+    history.replaceState(history.state, '', url)
   })
 }
 for (const input of document.querySelectorAll('input[name=light]')) {
