@@ -46,6 +46,13 @@ function orbitPose(bounds, index, scroll, height) {
   return null
 }
 
+function visibleShare(project, width, height, mastheadHeight) {
+  const { x, y, r, alpha } = project
+  const visibleWidth = Math.max(0, Math.min(width, x + r) - Math.max(0, x - r))
+  const visibleHeight = Math.max(0, Math.min(height, y + r) - Math.max(mastheadHeight, y - r))
+  return alpha * visibleWidth * visibleHeight / (4 * r * r)
+}
+
 export function mountCometVault(previewArt) {
   const archive = document.querySelector('.plate-vault')
   const sky = document.querySelector('.comet-vault')
@@ -159,6 +166,8 @@ export function mountCometVault(previewArt) {
   let height = 0
   let lastScroll = 0
   let scrollSpeed = 0
+  let scrollHandoff = null
+  let assistedOrbit = -1
   let previewWidth = 0
   let previewHeight = 0
   let mastheadHeight = 0
@@ -172,6 +181,47 @@ export function mountCometVault(previewArt) {
 
   function invalidate() {
     if (sceneVisible && !document.hidden && !frame) frame = requestAnimationFrame(render)
+  }
+
+  function scrollToOrbit(index, now = performance.now()) {
+    const start = window.scrollY
+    const distance = fields[index].offsetTop - start
+    scrollHandoff = null
+    if (!distance) return
+    const duration = Math.min(720, 340 + Math.abs(distance) * .32)
+    scrollHandoff = { index, start, direction: Math.sign(distance), startedAt: now, duration }
+    invalidate()
+  }
+
+  function advanceHandoff(now, scroll) {
+    if (!scrollHandoff) return scroll
+    const { index, start, direction, startedAt, duration } = scrollHandoff
+    const destination = fieldBounds[index].top
+    if ((scroll - lastScroll) * direction < -1 || (destination - scroll) * direction <= 0) {
+      scrollHandoff = null
+      return scroll
+    }
+    const progress = Math.max(0, Math.min(1, (now - startedAt) / duration))
+    const next = Math.round(start + (destination - start) * (1 - (1 - progress) ** 2))
+    // Let momentum carry the scene farther and only supply the rest of the scroll.
+    if ((next - scroll) * direction > 0) window.scrollTo({ top: next, behavior: 'instant' })
+    if (progress === 1) scrollHandoff = null
+    return window.scrollY
+  }
+
+  function completeDepartingOrbit(now, poses, scrollingForward) {
+    const index = poses.findIndex(pose => pose && !pose.entering && pose.progress < 1)
+    if (index === -1) {
+      assistedOrbit = -1
+      return
+    }
+    const batch = projects.filter(project => project.field === index)
+    const visible = batch.reduce((sum, project) => sum + visibleShare(project, width, height, mastheadHeight), 0) / batch.length
+    if (visible > .56 && assistedOrbit === index) assistedOrbit = -1
+    if (scrollingForward && !scrollHandoff && assistedOrbit !== index && visible <= .5) {
+      assistedOrbit = index
+      scrollToOrbit(index + 1, now)
+    }
   }
 
   function resetPreview(restoreFocus = false) {
@@ -271,6 +321,7 @@ export function mountCometVault(previewArt) {
       if (focusOnClose || !project.button.matches(':focus-visible')) return
       const bounds = project.button.getBoundingClientRect()
       if (project.inFlight || bounds.top < masthead.offsetHeight + 10 || bounds.bottom + 48 > window.innerHeight) {
+        scrollHandoff = null
         const field = fields[project.field]
         const [, top] = narrow.matches ? project.narrow : project.wide
         const within = Math.min(field.offsetHeight - window.innerHeight, field.offsetHeight * top / 100 - window.innerHeight * .55)
@@ -334,13 +385,14 @@ export function mountCometVault(previewArt) {
       mastheadHeight = masthead.offsetHeight
       layoutDirty = false
     }
-    const scroll = window.scrollY
+    const scroll = advanceHandoff(now, window.scrollY)
     const spatial = mode === '3d'
     const compact = narrow.matches
     const ease = 1 - Math.exp(-step * 10)
     lookX += (pointerX - lookX) * ease
     lookY += (pointerY - lookY) * ease
-    const velocity = Math.min(1, Math.abs(scroll - lastScroll) / (step * 1600))
+    const delta = scroll - lastScroll
+    const velocity = Math.min(1, Math.abs(delta) / (step * 1600))
     scrollSpeed = still ? 0 : scrollSpeed + (velocity - scrollSpeed) * ease
     lastScroll = scroll
     const poses = fields.map((field, index) => {
@@ -394,6 +446,8 @@ export function mountCometVault(previewArt) {
       project.button.style.setProperty('--comet-alpha', project.alpha)
       project.button.toggleAttribute('data-far', project.alpha < .15)
     }
+
+    if (!still) completeDepartingOrbit(now, poses, delta > 0)
 
     if (active && (active.alpha < .15 || active.y < mastheadHeight || active.y > height + active.r
       || active.x < -active.r || active.x > width + active.r)) {
@@ -457,6 +511,8 @@ export function mountCometVault(previewArt) {
   spaceCanvas.addEventListener('webglcontextlost', disableSpace)
 
   function showView(plates, transferFocus = false) {
+    scrollHandoff = null
+    assistedOrbit = -1
     sceneVisible = !plates
     sky.hidden = plates
     archive.hidden = !plates
@@ -475,6 +531,7 @@ export function mountCometVault(previewArt) {
       const control = plates ? skySwitch : plateSwitch
       control.focus({ preventScroll: true })
     }
+    lastScroll = window.scrollY
   }
 
   function navigateView(plates) {
@@ -497,6 +554,10 @@ export function mountCometVault(previewArt) {
     invalidate()
   })
   window.addEventListener('scroll', invalidate, { passive: true })
+  window.addEventListener('wheel', event => {
+    if (scrollHandoff && event.deltaY * scrollHandoff.direction < 0) scrollHandoff = null
+  }, { passive: true })
+  window.addEventListener('touchstart', () => { scrollHandoff = null }, { passive: true })
   window.addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse') return
     pointerX = event.clientX / window.innerWidth * 2 - 1
@@ -505,6 +566,7 @@ export function mountCometVault(previewArt) {
   }, { passive: true })
   reduced.addEventListener('change', () => {
     if (reduced.matches) {
+      scrollHandoff = null
       if (closing) resetPreview()
       previewMotion?.cancel()
       previewMotion = null
@@ -519,7 +581,8 @@ export function mountCometVault(previewArt) {
     const target = document.querySelector(anchor.hash)
     target.tabIndex = -1
     target.focus({ preventScroll: true })
-    target.scrollIntoView({ behavior: reduced.matches ? 'instant' : 'smooth' })
+    if (reduced.matches) target.scrollIntoView({ behavior: 'instant' })
+    else scrollToOrbit(fields.indexOf(target))
   }))
 
   skySwitch.hidden = false
