@@ -29,3 +29,12 @@
 .tide-plate .caption { gap: 12px; }
 .tide-plate h2 { font-size: clamp(36px, 6.5vw, 97px); }
 .tide-plate .open { flex: none; }
+.same-depth-plate { margin-top: 22px; background: #203b9a; color: #fff5d8; }
+.same-depth-plate img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 53%; }
+.same-depth-plate::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, #101b49 0%, #101b4977 28%, transparent 57%, #101b4977 100%); }
+.same-depth-plate .caption { gap: 12px; }
+.same-depth-plate h2 { font-size: clamp(36px, 6.5vw, 97px); }
+.same-depth-plate .open { flex: none; }
+@media (max-width: 600px) {
+  .same-depth-plate img { height: 66%; top: 13%; object-fit: contain; }
+}

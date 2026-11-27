@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f1e6">
+    <meta name="description" content="See how a different baking pan changes batter depth and scale your ingredients to match.">
+    <title>Same Depth — Baking pan calculator</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <header class="masthead shell">
+      <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>Same Depth</a>
+      <a class="back" href="../"><span aria-hidden="true"></span> Design vault</a>
+    </header>
+
+    <main class="shell">
+      <div class="intro">
+        <h1>Different pan.<br><em>Same depth.</em></h1>
+        <p>Swap in the baking pan you have. See where the batter will sit, then scale your recipe to match.</p>
+      </div>
+
+      <div class="workbench">
+        <section class="instrument" aria-labelledby="batter-heading">
+          <div class="blueprint" id="measurements">
+            <div class="chart-heading">
+              <h2 id="batter-heading">Batter level</h2>
+              <p class="guide"><i aria-hidden="true"></i> Original level</p>
+            </div>
+
+            <div class="charts">
+              <figure>
+                <figcaption id="recipe-pan-label">Recipe pan</figcaption>
+                <details class="pan-control">
+                  <summary aria-describedby="recipe-pan-label"><span>20 cm square</span></summary>
+                  <div class="pan-settings" data-pan aria-labelledby="recipe-pan-label" aria-describedby="pan-help">
+                    <div class="pan-fields">
+                      <label class="field shape">Shape
+                        <select name="shape">
+                          <option value="square" selected>Square</option>
+                          <option value="round">Round</option>
+                          <option value="rectangle">Rectangle</option>
+                        </select>
+                      </label>
+                      <label class="field unit">Unit
+                        <select name="unit">
+                          <option value="cm" selected>cm</option>
+                          <option value="in">in</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="pan-fields dimensions">
+                      <label class="field"><span data-dimension>Side</span>
+                        <input name="width" type="number" inputmode="decimal" min="1" max="100" step="any" value="20" required>
+                      </label>
+                      <label class="field" data-length hidden>Length
+                        <input name="length" type="number" inputmode="decimal" min="1" max="100" step="any" value="20" disabled required>
+                      </label>
+                    </div>
+                  </div>
+                </details>
+                <div class="pan-plot">
+                  <canvas id="recipe-pan-drawing" aria-hidden="true"></canvas>
+                </div>
+                <div class="depth"><strong id="recipe-depth">100%</strong> <span>of recipe depth</span></div>
+              </figure>
+              <figure>
+                <figcaption id="new-pan-label">Your pan</figcaption>
+                <details class="pan-control">
+                  <summary aria-describedby="new-pan-label"><span>26 cm round</span></summary>
+                  <div class="pan-settings" data-pan aria-labelledby="new-pan-label" aria-describedby="pan-help">
+                    <div class="pan-fields">
+                      <label class="field shape">Shape
+                        <select name="shape">
+                          <option value="square">Square</option>
+                          <option value="round" selected>Round</option>
+                          <option value="rectangle">Rectangle</option>
+                        </select>
+                      </label>
+                      <label class="field unit">Unit
+                        <select name="unit">
+                          <option value="cm" selected>cm</option>
+                          <option value="in">in</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="pan-fields dimensions">
+                      <label class="field"><span data-dimension>Diameter</span>
+                        <input name="width" type="number" inputmode="decimal" min="1" max="100" step="any" value="26" required>
+                      </label>
+                      <label class="field" data-length hidden>Length
+                        <input name="length" type="number" inputmode="decimal" min="1" max="100" step="any" value="26" disabled required>
+                      </label>
+                    </div>
+                  </div>
+                </details>
+                <div class="pan-plot">
+                  <canvas id="new-pan-drawing" aria-hidden="true"></canvas>
+                  <label class="sr-only" for="fill-level">Batter depth in your pan</label>
+                  <input id="fill-level" type="range" min="0" max="1.26" step="0.005" value="0.755" aria-describedby="fill-hint">
+                </div>
+                <div class="depth"><strong id="new-depth">75%</strong> <span>of recipe depth</span></div>
+              </figure>
+            </div>
+
+            <div class="chart-footer">
+              <div class="fill-notes">
+                <p id="comparison" role="status">The same batch is 25% shallower.</p>
+                <p id="fill-hint">Drag the gold handle to change the batch.</p>
+              </div>
+              <div class="batch-actions">
+                <button type="button" id="same-batch">Same batch</button>
+                <button type="button" id="match-depth">Match depth <span id="match-factor">1.33×</span></button>
+              </div>
+            </div>
+          </div>
+          <p class="measure-note" id="pan-help">Measure across the inside of each pan. The model assumes straight sides and uses illustrative rim heights.</p>
+        </section>
+
+        <aside class="recipe" aria-labelledby="recipe-heading">
+          <div class="factor-panel">
+            <p class="factor-label">Batch size</p>
+            <div class="factor" id="factor">1<span>×</span></div>
+            <p id="factor-note">Original recipe</p>
+          </div>
+          <div class="recipe-body">
+            <div class="recipe-heading">
+              <h2 id="recipe-heading">Ingredients</h2>
+              <button class="text-button" id="edit-recipe" type="button" aria-controls="recipe-editor" aria-expanded="false">Edit</button>
+            </div>
+            <div id="recipe-view">
+              <table>
+                <caption class="sr-only">Original and previewed ingredient amounts</caption>
+                <thead><tr><th scope="col">Ingredient</th><th scope="col">Original</th><th scope="col">This batch</th></tr></thead>
+                <tbody id="ingredient-results"></tbody>
+              </table>
+              <p id="recipe-note" class="recipe-note">Sample brownie recipe. Edit to use your own ingredients.</p>
+            </div>
+            <form id="recipe-editor" hidden>
+              <div id="ingredient-fields"></div>
+              <div class="editor-actions">
+                <button type="button" class="text-button" id="add-ingredient">+ Ingredient</button>
+                <button type="submit" class="done-button">Done</button>
+              </div>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <template id="ingredient-template">
+      <div class="ingredient-fields">
+        <label class="field name">Ingredient<input type="text" name="ingredient" maxlength="55" required></label>
+        <label class="field">Amount<input type="number" name="amount" inputmode="decimal" min="0" max="100000" step="any" required></label>
+        <label class="field">Unit<input type="text" name="measure" maxlength="14" placeholder="g"></label>
+        <button type="button" class="remove" aria-label="Remove ingredient">−</button>
+      </div>
+    </template>
+    <script type="module" src="./study.js"></script>
+  </body>
+</html>
