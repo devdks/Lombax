@@ -1,6 +1,5 @@
 // A folded core drawn as closed, offset contour rings.
-export function drawCore(canvas, layer = null) {
-  const w = canvas.clientWidth, h = canvas.clientHeight
+export function drawCore(canvas, layer = null, w = canvas.clientWidth, h = canvas.clientHeight) {
   const scale = Math.min(devicePixelRatio || 1, 2)
   canvas.width = w * scale
   canvas.height = h * scale

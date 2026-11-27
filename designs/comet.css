@@ -1,0 +1,364 @@
+.comet-vault {
+  --sky-ink: #f8f3e8;
+  --sky-muted: #c2bfd1;
+  --sky-gold: #ecd095;
+  --sky-serif: "Instrument Serif", Georgia, serif;
+  --sky-mono: "Courier New", monospace;
+  --sky-gutter: clamp(24px, 5.1vw, 100px);
+  position: relative;
+  isolation: isolate;
+  background: #070816;
+  color: var(--sky-ink);
+}
+
+.comet-vault [hidden], .plate-vault [hidden] { display: none !important; }
+.plate-vault-actions { display: flex; align-items: center; gap: 16px; }
+.plates-return {
+  border: 1px solid #201f1c55;
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.plates-return:hover { background: #201f1c0c; }
+
+.sky-backdrop, .sky-dust, .sky-space {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sky-backdrop {
+  z-index: -3;
+  background:
+    linear-gradient(90deg, #070816b0 0%, #07081659 36%, transparent 72%),
+    linear-gradient(0deg, #070816 0%, transparent 21%, transparent 81%, #07081691 100%),
+    url("./comet-nebula.webp") center 52% / cover no-repeat,
+    #070816;
+  background-size: cover;
+  background-position: center;
+}
+.sky-dust { z-index: -2; }
+.sky-space { z-index: -1; }
+
+.sky-masthead {
+  position: fixed;
+  z-index: 10;
+  inset: 0 var(--sky-gutter) auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 85px;
+  border-bottom: 1px solid #dcd9f42a;
+}
+.sky-masthead::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(-1 * var(--sky-gutter)) 0;
+  background: linear-gradient(#070816f5, #070816bc 67%, #07081680);
+}
+.sky-identity, .sky-views { display: flex; align-items: center; }
+.sky-identity { gap: 20px; }
+.sky-identity strong { font-size: 26px; letter-spacing: -.075em; }
+.sky-identity strong span { margin-left: 6px; color: var(--sky-gold); font-size: .78em; }
+.sky-archive {
+  border-left: 1px solid #dcd9f43b;
+  padding-left: 20px;
+  color: var(--sky-muted);
+  font: 10px/1.2 var(--sky-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.sky-views { gap: 12px; }
+.sky-dimensions {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #dcd9f43b;
+  border-radius: 999px;
+  background: #0d0d20a6;
+}
+.sky-dimensions button, .sky-plates {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sky-muted);
+  font: 11px/1 var(--sky-mono);
+  text-transform: uppercase;
+  letter-spacing: .075em;
+  cursor: pointer;
+}
+.sky-dimensions button { min-width: 43px; min-height: 31px; }
+.sky-dimensions button[aria-pressed="true"] { background: var(--sky-gold); color: #191328; font-weight: 700; }
+.sky-dimensions button:disabled { opacity: .45; cursor: default; }
+.sky-plates { min-height: 39px; padding: 0 15px; border: 1px solid #dcd9f43b; }
+.sky-plates span { margin-left: 4px; color: var(--sky-gold); }
+.sky-plates:hover, .sky-dimensions button:not(:disabled):hover { color: var(--sky-ink); }
+.sky-dimensions button[aria-pressed="true"]:hover { color: #191328; }
+
+.sky-main { display: block; width: 100%; margin: 0; padding: 0; }
+.sky-field { position: relative; height: max(750px, 100svh); }
+.sky-intro {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: calc(var(--sky-gutter) + clamp(0px, 1.2vw, 24px));
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.sky-overline {
+  margin: 0 0 22px;
+  color: var(--sky-gold);
+  font: 11px/1.25 var(--sky-mono);
+  text-transform: uppercase;
+  letter-spacing: .17em;
+}
+.sky-overline > span:first-child { margin-right: 10px; font-size: 15px; vertical-align: -.04em; }
+.sky-intro h1, .sky-intro h2 {
+  margin: 0;
+  color: var(--sky-ink);
+  font: 400 clamp(104px, 11vw, 184px)/.82 var(--sky-serif);
+  letter-spacing: -.036em;
+}
+.sky-intro h2 { font-size: clamp(89px, 9vw, 144px); }
+.sky-intro h1 em, .sky-intro h2 em { display: block; color: var(--sky-gold); font-weight: 400; }
+.sky-motto {
+  margin: 29px 0 0;
+  color: var(--sky-ink);
+  font: 400 clamp(23px, 2.1vw, 33px)/1.05 var(--sky-serif);
+}
+.sky-motto em { color: var(--sky-gold); }
+.sky-instructions {
+  margin: 18px 0 0;
+  color: var(--sky-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sky-comets { position: absolute; inset: 0; }
+.comet {
+  position: absolute;
+  left: var(--comet-x);
+  top: var(--comet-y);
+  width: var(--comet-size);
+  height: var(--comet-size);
+  transform: translate(calc(-50% + var(--drift-x, 0px)), calc(-50% + var(--drift-y, 0px)));
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--sky-ink);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.comet[aria-expanded="true"] { z-index: 2; }
+.comet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: scale(var(--comet-scale, 1));
+}
+.comet-disc {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--comet-color), transparent 22%);
+  border-radius: 50%;
+  overflow: hidden;
+  background: #15152c;
+  box-shadow: 0 0 19px color-mix(in srgb, var(--comet-color), transparent 80%);
+  transform: scale(var(--comet-scale, 1));
+  pointer-events: none;
+}
+.comet-disc img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.comet-disc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #0a08172c 30%, #09071680);
+  box-shadow: inset 0 0 12px #17143290;
+}
+.has-space .comet[data-art-ready] .comet-disc { opacity: 0; }
+.comet-label {
+  position: absolute;
+  top: calc(100% + 13px + var(--label-drop, 0px));
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: max-content;
+  text-shadow: 0 1px 7px #03030d, 0 2px 15px #03030d, 0 0 8px #03030d;
+  transform: translateX(-50%);
+}
+.comet-number {
+  color: var(--comet-color);
+  font: 9px/1.2 var(--sky-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.comet-name { font: 400 clamp(20px, 1.95vw, 30px)/1.06 var(--sky-serif); }
+.comet[aria-expanded="true"] .comet-name { color: var(--comet-color); }
+.comet:focus-visible, .comet-vault a:focus-visible, .comet-vault button:focus-visible, .plates-return:focus-visible {
+  outline: 2px solid var(--sky-gold, #b43612);
+  outline-offset: 5px;
+}
+
+.sky-footer {
+  position: absolute;
+  right: var(--sky-gutter);
+  bottom: 33px;
+  left: var(--sky-gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sky-scroll, .sky-range {
+  color: var(--sky-muted);
+  font: 10px/1.2 var(--sky-mono);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+}
+.sky-scroll { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; }
+.sky-scroll > span {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  place-items: center;
+  border: 1px solid #dcd9f448;
+  border-radius: 50%;
+  color: var(--sky-gold);
+  font-size: 19px;
+}
+.sky-scroll:hover > span { border-color: var(--sky-gold); }
+.sky-scroll:hover { color: var(--sky-ink); }
+.sky-range { display: flex; align-items: center; gap: 10px; }
+.sky-range i { width: 37px; height: 1px; background: linear-gradient(90deg, #dcd9f42f 60%, var(--sky-gold) 60%); }
+.sky-field-next .sky-range i { background: linear-gradient(90deg, var(--sky-gold) 40%, #dcd9f42f 40%); }
+.sky-range b { color: #aca8c0; font-weight: 400; }
+
+.comet-preview {
+  --preview-tint: var(--sky-gold);
+  position: fixed;
+  z-index: 8;
+  width: clamp(250px, 22vw, 326px);
+  max-width: calc(100vw - 32px);
+  background: #101127f5;
+  border: 1px solid color-mix(in srgb, var(--preview-tint), transparent 46%);
+  box-shadow: 0 0 34px #030411a6;
+  color: var(--sky-ink);
+}
+.comet-preview[data-reveal] { animation: open-preview 390ms cubic-bezier(.16, 1, .3, 1) both; }
+.comet-preview::before, .comet-preview::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+.comet-preview::before { top: -1px; left: -1px; border-top: 1px solid var(--preview-tint); border-left: 1px solid var(--preview-tint); }
+.comet-preview::after { right: -1px; bottom: -1px; border-right: 1px solid var(--preview-tint); border-bottom: 1px solid var(--preview-tint); }
+@keyframes open-preview {
+  from { clip-path: inset(49.6% 0 49.6% 0); opacity: .5; }
+  to { clip-path: inset(0); opacity: 1; }
+}
+.comet-preview-art { aspect-ratio: 2 / 1; background: #171832; }
+.comet-preview-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.comet-preview-body { padding: 13px 17px 16px; }
+.comet-preview-plate, .comet-preview-kind, .comet-preview-open {
+  margin: 0;
+  font: 10px/1.4 var(--sky-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.comet-preview-plate { color: var(--preview-tint); }
+.comet-preview h2 { margin: 2px 0 4px; font: 400 33px/1 var(--sky-serif); letter-spacing: -.015em; }
+.comet-preview-kind { color: var(--sky-muted); }
+.comet-preview-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #dcd9f448;
+  border-radius: 999px;
+  color: var(--sky-ink);
+  text-decoration: none;
+}
+.comet-preview-open:hover { border-color: var(--preview-tint); }
+.comet-preview-open span { color: var(--preview-tint); font-size: 15px; }
+.comet-preview-close {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e5ddf760;
+  border-radius: 50%;
+  background: #090a1be8;
+  color: var(--sky-ink);
+  font: 23px/1 sans-serif;
+  cursor: pointer;
+}
+.comet-preview-close:hover { border-color: var(--preview-tint); }
+.sky-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+@media (max-width: 1000px) {
+  .sky-intro h1 { font-size: clamp(95px, 12vw, 120px); }
+}
+@media (max-width: 720px) {
+  .sky-masthead { height: 65px; }
+  .sky-identity strong { font-size: 22px; }
+  .sky-archive { display: none; }
+  .sky-views { gap: 7px; }
+  .sky-dimensions button { min-width: 37px; min-height: 32px; }
+  .sky-plates { min-height: 40px; padding: 0 9px; }
+  .sky-plates span { margin-left: 1px; }
+  .sky-field { height: max(775px, 100svh); }
+  .sky-field-next { height: max(645px, 91svh); }
+  .sky-intro { top: 96px; left: var(--sky-gutter); transform: none; }
+  .sky-overline { margin-bottom: 15px; font-size: 9px; }
+  .sky-overline > span:first-child { font-size: 13px; margin-right: 7px; }
+  .sky-intro h1, .sky-intro h2 { font-size: clamp(68px, 13vw, 100px); line-height: .9; }
+  .sky-intro h1 em, .sky-intro h2 em { display: inline; }
+  .sky-motto { margin-top: 12px; font-size: 22px; }
+  .sky-instructions { margin-top: 9px; font-size: 12px; }
+  .comet { left: var(--comet-mobile-x); top: var(--comet-mobile-y); width: var(--comet-mobile-size); height: var(--comet-mobile-size); }
+  .comet-label { top: calc(100% + 9px + var(--label-drop, 0px)); }
+  .comet-name { font-size: clamp(18px, 5vw, 25px); }
+  .sky-footer { bottom: 20px; }
+  .sky-scroll { gap: 8px; }
+  .sky-scroll > span { width: 32px; height: 32px; }
+  .sky-range { gap: 6px; }
+  .sky-range i { width: 18px; }
+  .comet-preview { width: min(340px, calc(100vw - 32px)); }
+  .comet-preview-art { aspect-ratio: 2.8 / 1; }
+  .comet-preview-close { width: 42px; height: 42px; }
+}
+@media (max-width: 360px) {
+  .sky-intro h1, .sky-intro h2 { font-size: 61px; }
+  .sky-masthead { inset-inline: 17px; }
+  .plate-vault-actions { gap: 8px; }
+  .plate-vault-actions small { max-width: 10ch; }
+}
+@media (max-height: 490px) {
+  .comet-preview {
+    display: grid;
+    grid-template-columns: 30% minmax(0, 1fr);
+    width: min(280px, calc(100vw - 32px));
+  }
+  .comet-preview-art { position: relative; aspect-ratio: auto; overflow: hidden; }
+  .comet-preview-art img { position: absolute; }
+  .comet-preview-body { padding: 12px 35px 12px 12px; }
+  .comet-preview h2 { font-size: 25px; }
+  .comet-preview-close { width: 32px; height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .comet-preview[data-reveal] { animation: none; }
+}
