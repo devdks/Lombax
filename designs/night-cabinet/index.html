@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151217">
+  <title>Night Cabinet — Lombax</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="mast">
+    <a class="back" href="../"><span aria-hidden="true">←</span> Design vault</a>
+    <span class="plate">Lombax <i></i> Plate 002</span>
+  </header>
+  <main>
+    <div class="exhibit">
+      <section class="intro" aria-labelledby="title">
+        <p class="eyebrow"><i class="spectrum" aria-hidden="true"></i> Fluorescence study</p>
+        <h1 id="title">Night<br><em>Cabinet</em></h1>
+        <p class="lead">Some minerals carry a second color. Sweep the ultraviolet lamp across a specimen to find it.</p>
+        <fieldset class="lights">
+          <legend>Illumination</legend>
+          <label><input type="radio" name="light" value="day"><span>Daylight</span></label>
+          <label><input type="radio" name="light" value="spot" checked><span>UV spot</span></label>
+          <label><input type="radio" name="light" value="flood"><span>UV flood</span></label>
+        </fieldset>
+      </section>
+      <figure class="viewer">
+        <div class="frame" id="frame" data-mode="spot" tabindex="0" role="group" aria-label="Fluorite specimen, movable UV spot" aria-describedby="help">
+          <span class="frame-label">Fig. <b id="fig">01</b></span>
+          <span class="lamp-readout" id="lamp">UV spot</span>
+          <div class="sample"><img id="mineral" src="./fluorite.jpg" alt="Intergrown lavender fluorite cubes with stepped faces"><canvas id="emission" aria-hidden="true"></canvas></div>
+          <div class="reticle" aria-hidden="true"></div>
+        </div>
+        <figcaption><span id="specimen-caption">Fluorite <i>/</i> CaF₂</span><span id="help">Move the spot · drag or use arrow keys</span></figcaption>
+      </figure>
+    </div>
+    <section class="drawer" aria-labelledby="drawer-title">
+      <div class="drawer-heading"><h2 id="drawer-title">Specimen drawer</h2><span>03 specimens</span></div>
+      <div class="specimens">
+        <button type="button" data-mineral="fluorite" aria-pressed="true"><img src="./fluorite.jpg" alt=""><span><small>01 / Halide</small><strong>Fluorite</strong></span><i aria-hidden="true"></i></button>
+        <button type="button" data-mineral="calcite" aria-pressed="false"><img src="./calcite.jpg" alt=""><span><small>02 / Carbonate</small><strong>Calcite</strong></span><i aria-hidden="true"></i></button>
+        <button type="button" data-mineral="willemite" aria-pressed="false"><img src="./willemite.jpg" alt=""><span><small>03 / Silicate</small><strong>Willemite</strong></span><i aria-hidden="true"></i></button>
+      </div>
+      <p class="note" aria-live="polite" id="note">This illustrated fluorite specimen fluoresces violet-blue under ultraviolet light.</p>
+    </section>
+  </main>
+  <footer>Illustrated specimens · simulated fluorescence <a href="https://www.franklinmineralmuseum.org/fluorescent-minerals/">Mineral reference ↗</a></footer>
+  <script type="module" src="./cabinet.js"></script>
+</body>
+</html>
