@@ -1,0 +1,6 @@
+{
+  "name": "lombax-design-vault",
+  "private": true,
+  "scripts": { "dev": "vite designs --host 0.0.0.0", "build": "vite build designs" },
+  "devDependencies": { "vite": "7.2.2" }
+}
