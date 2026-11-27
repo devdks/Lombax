@@ -78,10 +78,14 @@
     </main>
     <footer class="shell">
       <div class="legend"><span><i></i>Exposed road</span><span><i class="wet-key"></i>Underwater road</span><span><i class="low-key"></i>Low point on chart</span></div>
-      <details class="notes">
-        <summary>About the model</summary>
-        <p>Lantern Reach is fictional. The study uses a repeating 12-hour tide and compares water level with road height along each 24-minute crossing. The terrain is vertically exaggerated.</p>
-      </details>
+      <button class="notes-toggle" type="button" popovertarget="model-notes">About the model</button>
+      <section class="notes" id="model-notes" popover aria-labelledby="notes-title">
+        <div class="notes-heading">
+          <h2 id="notes-title">About the model</h2>
+          <button type="button" popovertarget="model-notes" popovertargetaction="hide" autofocus>Close</button>
+        </div>
+        <p>At Lantern Reach, a fictional causeway leads to a lighthouse. The study uses a repeating 12-hour tide and compares water level with road height along each 24-minute crossing. The terrain is vertically exaggerated.</p>
+      </section>
     </footer>
     <script type="module" src="./study.js"></script>
   </body>

@@ -386,7 +386,7 @@ export function createTerrain(container, onProject, onLost) {
     const { clientWidth: width, clientHeight: height } = container;
     if (!width || !height) return;
     const aspect = width / height;
-    const span = Math.max(21.6, 27.8 / aspect);
+    const span = Math.max(11.5, 27.8 / aspect, Math.min(21.6, (WORLD_X - 1) / aspect));
     camera.left = -span * aspect / 2;
     camera.right = span * aspect / 2;
     camera.top = span / 2;
