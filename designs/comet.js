@@ -34,6 +34,7 @@ function orbitPose(bounds, index, scroll, height) {
       entering: true, progress, offset: localScroll,
       alpha: easeBetween(.03, .38, progress),
       caption: easeBetween(.40, .91, progress),
+      captionTravel: 1 - easeBetween(.16, .98, progress),
     }
   }
   if (localScroll > lastRest && index < bounds.length - 1) {
@@ -41,17 +42,11 @@ function orbitPose(bounds, index, scroll, height) {
     return {
       entering: false, progress, offset: localScroll - lastRest,
       alpha: 1 - easeBetween(.63, .95, progress),
-      caption: 1 - easeBetween(.03, .53, progress),
+      caption: 1 - easeBetween(.07, .52, progress),
+      captionTravel: -easeBetween(0, .68, progress),
     }
   }
   return null
-}
-
-function visibleShare(project, width, height, mastheadHeight) {
-  const { x, y, r, alpha } = project
-  const visibleWidth = Math.max(0, Math.min(width, x + r) - Math.max(0, x - r))
-  const visibleHeight = Math.max(0, Math.min(height, y + r) - Math.max(mastheadHeight, y - r))
-  return alpha * visibleWidth * visibleHeight / (4 * r * r)
 }
 
 export function mountCometVault(previewArt) {
@@ -170,7 +165,6 @@ export function mountCometVault(previewArt) {
   let lenis
   let wheelGesture = null
   let releasedForward = false
-  let assistedOrbit = -1
   let previewWidth = 0
   let previewHeight = 0
   let mastheadHeight = 0
@@ -212,6 +206,13 @@ export function mountCometVault(previewArt) {
       if (event.cancelable) event.preventDefault()
       return false
     }
+    const previous = fieldBounds[wheelGesture.next - 1]
+    if (direction > 0 && landing === undefined && next && previous
+      && lenis.animatedScroll >= next.top - Math.min(previous.height, height) - 1) {
+      if (event.cancelable) event.preventDefault()
+      scrollToOrbit(wheelGesture.next)
+      return false
+    }
     input.deltaY = direction * distance
   }
 
@@ -234,7 +235,7 @@ export function mountCometVault(previewArt) {
   }
 
   function scrollToOrbit(index, speed = 0) {
-    const destination = fields[index].offsetTop
+    const destination = fieldBounds[index]?.top ?? fields[index].offsetTop
     const distance = Math.abs(destination - lenis.animatedScroll)
     if (!distance) return
     const duration = Math.min(1.05, .56 + distance / height * .49)
@@ -246,20 +247,10 @@ export function mountCometVault(previewArt) {
     })
   }
 
-  function completeDepartingOrbit(poses, speed) {
+  function continueDeparture(poses, speed) {
+    if (lenis.isTouching || lenis.userData.landing !== undefined || (speed <= 0 && !releasedForward)) return
     const index = poses.findIndex(pose => pose && !pose.entering && pose.progress < 1)
-    if (index === -1) {
-      assistedOrbit = -1
-      return
-    }
-    const batch = projects.filter(project => project.field === index)
-    const visible = batch.reduce((sum, project) => sum + visibleShare(project, width, height, mastheadHeight), 0) / batch.length
-    if (visible > .56 && assistedOrbit === index) assistedOrbit = -1
-    if ((speed > 0 || releasedForward) && !lenis.isTouching && lenis.userData.landing === undefined
-      && assistedOrbit !== index && visible <= .5) {
-      assistedOrbit = index
-      scrollToOrbit(index + 1, Math.max(0, speed))
-    }
+    if (index !== -1) scrollToOrbit(index + 1, Math.max(0, speed))
   }
 
   function resetPreview(restoreFocus = false) {
@@ -427,10 +418,12 @@ export function mountCometVault(previewArt) {
     if (lenis?.isScrolling === 'smooth' && Math.abs(lenis.animatedScroll - window.scrollY) > 1) {
       lenis.scrollTo(window.scrollY, { immediate: true })
     }
-    lenis?.raf(now)
+    // Use the scene's capped frame clock so a slow frame cannot skip ahead in the flight.
+    lenis?.raf(time * 1000)
     const scroll = lenis?.animatedScroll ?? window.scrollY
     const spatial = mode === '3d'
     const compact = narrow.matches
+    const flightDistance = Math.min(width * (compact ? 1.75 : 1.36), height * 1.30)
     const ease = 1 - Math.exp(-step * 10)
     lookX += (pointerX - lookX) * ease
     lookY += (pointerY - lookY) * ease
@@ -440,7 +433,9 @@ export function mountCometVault(previewArt) {
     lastScroll = scroll
     const poses = fields.map((field, index) => {
       const pose = still ? null : orbitPose(fieldBounds, index, scroll, height)
-      field.style.setProperty('--orbit-offset', (pose?.offset ?? 0) + 'px')
+      const captionTravel = Math.min(width, height) * .32 * (pose?.captionTravel ?? 0)
+      field.style.setProperty('--orbit-caption-x', captionTravel * .79 + 'px')
+      field.style.setProperty('--orbit-caption-y', ((pose?.offset ?? 0) - captionTravel * .61) + 'px')
       field.style.setProperty('--orbit-caption', pose?.caption ?? 1)
       field.toggleAttribute('data-caption-away', !!pose && pose.caption < .04)
       return pose
@@ -464,7 +459,7 @@ export function mountCometVault(previewArt) {
       }
       project.inFlight = Math.abs(flight) > .035
       project.heading = project.angle - (compact ? .20 : 0)
-      const distance = flight * Math.min(width * (compact ? 1.75 : 1.36), height * 1.30)
+      const distance = flight * flightDistance
       const flightX = -Math.cos(project.heading) * distance
       const flightY = -Math.sin(project.heading) * distance + (pose?.offset ?? 0)
       const floatX = lookX * drift + Math.cos(phase) * hover * .78
@@ -490,7 +485,7 @@ export function mountCometVault(previewArt) {
       project.button.toggleAttribute('data-far', project.alpha < .15)
     }
 
-    if (lenis) completeDepartingOrbit(poses, delta / step)
+    if (lenis) continueDeparture(poses, delta / step)
     releasedForward = false
 
     if (active && (active.alpha < .15 || active.y < mastheadHeight || active.y > height + active.r
@@ -555,7 +550,6 @@ export function mountCometVault(previewArt) {
   spaceCanvas.addEventListener('webglcontextlost', disableSpace)
 
   function showView(plates, transferFocus = false) {
-    assistedOrbit = -1
     sceneVisible = !plates
     sky.hidden = plates
     archive.hidden = !plates

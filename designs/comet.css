@@ -104,7 +104,7 @@
 .sky-main { display: block; width: 100%; margin: 0; padding: 0; overflow: clip; }
 .sky-field { position: relative; height: max(750px, 100svh); min-height: 100dvh; }
 .sky-intro, .sky-footer {
-  translate: 0 var(--orbit-offset, 0px);
+  translate: var(--orbit-caption-x, 0px) var(--orbit-caption-y, 0px);
   opacity: var(--orbit-caption, 1);
 }
 .sky-field[data-caption-away] .sky-footer { visibility: hidden; }
