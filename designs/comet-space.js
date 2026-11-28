@@ -76,7 +76,7 @@ export function createSpace(canvas, projects, invalidate) {
       uniforms.art.value = texture
       uniforms.aspect.value = texture.image.width / texture.image.height
       uniforms.hasArt.value = 1
-      project.button.dataset.artReady = ''
+      project.anchor.dataset.artReady = ''
       invalidate()
     })
     const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader, transparent: true })

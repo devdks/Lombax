@@ -87,7 +87,6 @@ export function mountCometVault(previewArt) {
   if (!dust) return
   const spaceCanvas = sky.querySelector('.sky-space')
   const preview = sky.querySelector('.comet-preview')
-  const link = preview.querySelector('.comet-preview-open')
   const previewImage = preview.querySelector('img')
   const close = preview.querySelector('.comet-preview-close')
   const masthead = sky.querySelector('.sky-masthead')
@@ -108,18 +107,18 @@ export function mountCometVault(previewArt) {
     const image = previewArt(plate)
     const path = flightPaths[index < 4 ? index : 4 + index % 4]
     const field = Math.floor(index / 4)
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'comet'
-    button.setAttribute('aria-expanded', 'false')
-    button.setAttribute('aria-controls', preview.id)
+    const anchor = document.createElement('a')
+    anchor.href = plate.href
+    anchor.className = 'comet'
+    anchor.setAttribute('aria-expanded', 'false')
+    anchor.setAttribute('aria-controls', preview.id)
 
     for (const [suffix, [x, y, size]] of [['', path.wide], ['mobile-', path.narrow]]) {
-      button.style.setProperty('--comet-' + suffix + 'x', x + '%')
-      button.style.setProperty('--comet-' + suffix + 'y', y + '%')
-      button.style.setProperty('--comet-' + suffix + 'size', size + 'px')
+      anchor.style.setProperty('--comet-' + suffix + 'x', x + '%')
+      anchor.style.setProperty('--comet-' + suffix + 'y', y + '%')
+      anchor.style.setProperty('--comet-' + suffix + 'size', size + 'px')
     }
-    button.style.setProperty('--comet-color', path.color)
+    anchor.style.setProperty('--comet-color', path.color)
 
     const disc = document.createElement('span')
     disc.className = 'comet-disc'
@@ -136,10 +135,10 @@ export function mountCometVault(previewArt) {
     name.className = 'comet-name'
     name.textContent = title
     label.append(plateNumber, name)
-    button.append(disc, label)
-    groups[field].append(button)
+    anchor.append(disc, label)
+    groups[field].append(anchor)
 
-    return { ...path, title, number, kind, image, href: plate.href, field, button, index, reveal: 0 }
+    return { ...path, title, number, kind, image, field, anchor, index, reveal: 0 }
   })
   sky.querySelectorAll('[data-project-count]').forEach(label => {
     label.textContent = String(projects.length).padStart(2, '0')
@@ -256,8 +255,8 @@ export function mountCometVault(previewArt) {
   function resetPreview(restoreFocus = false) {
     clearTimeout(dismissTimer)
     if (!active) return
-    const { button } = active
-    button.setAttribute('aria-expanded', 'false')
+    const { anchor } = active
+    anchor.setAttribute('aria-expanded', 'false')
     preview.hidden = true
     preview.inert = false
     previewMotion?.cancel()
@@ -266,7 +265,7 @@ export function mountCometVault(previewArt) {
     closing = false
     if (restoreFocus) {
       focusOnClose = true
-      button.focus({ preventScroll: true })
+      anchor.focus({ preventScroll: true })
       focusOnClose = false
     }
     invalidate()
@@ -287,8 +286,7 @@ export function mountCometVault(previewArt) {
     preview.querySelector('#comet-title').textContent = project.title
     preview.querySelector('.comet-preview-kind').textContent = project.kind
     preview.style.setProperty('--preview-tint', project.color)
-    link.href = project.href
-    project.button.after(preview)
+    project.anchor.after(preview)
     preview.hidden = false
     previewWidth = preview.offsetWidth
     previewHeight = preview.offsetHeight
@@ -298,7 +296,7 @@ export function mountCometVault(previewArt) {
   function revealPreview(project) {
     closing = false
     preview.inert = false
-    project.button.setAttribute('aria-expanded', 'true')
+    project.anchor.setAttribute('aria-expanded', 'true')
     if (previewMotion) {
       previewMotion.onfinish = null
       previewMotion.reverse()
@@ -318,13 +316,13 @@ export function mountCometVault(previewArt) {
     clearTimeout(dismissTimer)
     if (!active || !openedByHover || closing) return
     const project = active
-    // Allow the pointer to cross the connector to the project link.
+    // Give the pointer time to reach the preview's close button.
     dismissTimer = setTimeout(() => {
-      if (active !== project || project.button.matches(':hover, :focus-visible')
+      if (active !== project || project.anchor.matches(':hover, :focus-visible')
         || preview.matches(':hover, :focus-within')) return
       if (reduced.matches) return resetPreview()
       closing = true
-      project.button.setAttribute('aria-expanded', 'false')
+      project.anchor.setAttribute('aria-expanded', 'false')
       preview.inert = true
       if (!previewMotion) {
         previewMotion = animatePreview()
@@ -339,16 +337,16 @@ export function mountCometVault(previewArt) {
   }
 
   projects.forEach(project => {
-    project.button.addEventListener('pointerenter', event => {
+    project.anchor.addEventListener('pointerenter', event => {
       if (event.pointerType !== 'mouse') return
       if ((active === project || scrollSpeed < .12) && !preview.contains(document.activeElement)) choose(project, true)
     })
-    project.button.addEventListener('pointerleave', event => {
+    project.anchor.addEventListener('pointerleave', event => {
       if (event.pointerType === 'mouse' && active === project) dismissAfterHover()
     })
-    project.button.addEventListener('focus', () => {
-      if (focusOnClose || !project.button.matches(':focus-visible')) return
-      const bounds = project.button.getBoundingClientRect()
+    project.anchor.addEventListener('focus', () => {
+      if (focusOnClose || !project.anchor.matches(':focus-visible')) return
+      const bounds = project.anchor.getBoundingClientRect()
       if (project.inFlight || bounds.top < masthead.offsetHeight + 10 || bounds.bottom + 48 > window.innerHeight) {
         const field = fields[project.field]
         const [, top] = narrow.matches ? project.narrow : project.wide
@@ -359,7 +357,6 @@ export function mountCometVault(previewArt) {
       }
       choose(project)
     })
-    project.button.addEventListener('click', event => choose(project, event.pointerType === 'mouse'))
   })
   preview.addEventListener('pointerenter', event => {
     if (event.pointerType === 'mouse') clearTimeout(dismissTimer)
@@ -373,7 +370,7 @@ export function mountCometVault(previewArt) {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && active) {
       event.preventDefault()
-      resetPreview(preview.contains(document.activeElement) || document.activeElement === active.button)
+      resetPreview(preview.contains(document.activeElement) || document.activeElement === active.anchor)
     }
   })
   document.addEventListener('pointerdown', event => {
@@ -477,12 +474,12 @@ export function mountCometVault(previewArt) {
       // A head below or left of the viewport can still have a visible flame.
       project.visible = project.alpha > .003 && project.x > -size * 3.5 && project.x < width + size
         && project.y > -size && project.y < height + size * 3.5
-      project.button.style.setProperty('--drift-x', (flightX + floatX) + 'px')
-      project.button.style.setProperty('--drift-y', (flightY + floatY) + 'px')
-      project.button.style.setProperty('--comet-scale', scale)
-      project.button.style.setProperty('--label-drop', (project.r - size / 2) + 'px')
-      project.button.style.setProperty('--comet-alpha', project.alpha)
-      project.button.toggleAttribute('data-far', project.alpha < .15)
+      project.anchor.style.setProperty('--drift-x', (flightX + floatX) + 'px')
+      project.anchor.style.setProperty('--drift-y', (flightY + floatY) + 'px')
+      project.anchor.style.setProperty('--comet-scale', scale)
+      project.anchor.style.setProperty('--label-drop', (project.r - size / 2) + 'px')
+      project.anchor.style.setProperty('--comet-alpha', project.alpha)
+      project.anchor.toggleAttribute('data-far', project.alpha < .15)
     }
 
     if (lenis) continueDeparture(poses, delta / step)

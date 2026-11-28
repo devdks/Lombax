@@ -157,6 +157,7 @@
   border: 0;
   border-radius: 50%;
   color: var(--sky-ink);
+  text-decoration: none;
   background: transparent;
   cursor: pointer;
   opacity: var(--comet-alpha, 1);
@@ -273,7 +274,7 @@
 .comet-preview-art { aspect-ratio: 2 / 1; background: #171832; }
 .comet-preview-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .comet-preview-body { padding: 13px 17px 16px; }
-.comet-preview-plate, .comet-preview-kind, .comet-preview-open {
+.comet-preview-plate, .comet-preview-kind {
   margin: 0;
   font: 10px/1.4 var(--sky-mono);
   letter-spacing: .1em;
@@ -282,20 +283,6 @@
 .comet-preview-plate { color: var(--preview-tint); }
 .comet-preview h2 { margin: 2px 0 4px; font: 400 33px/1 var(--sky-serif); letter-spacing: -.015em; }
 .comet-preview-kind { color: var(--sky-muted); }
-.comet-preview-open {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  margin-top: 8px;
-  padding: 0 12px;
-  border: 1px solid #dcd9f448;
-  border-radius: 999px;
-  color: var(--sky-ink);
-  text-decoration: none;
-}
-.comet-preview-open:hover { border-color: var(--preview-tint); }
-.comet-preview-open span { color: var(--preview-tint); font-size: 15px; }
 .comet-preview-close {
   position: absolute;
   top: 7px;
