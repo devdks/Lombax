@@ -1,3 +1,4 @@
+import Lenis from 'lenis'
 import { createDust } from './comet-dust.js'
 
 const flightPaths = [
@@ -166,7 +167,9 @@ export function mountCometVault(previewArt) {
   let height = 0
   let lastScroll = 0
   let scrollSpeed = 0
-  let scrollHandoff = null
+  let lenis
+  let wheelGesture = null
+  let releasedForward = false
   let assistedOrbit = -1
   let previewWidth = 0
   let previewHeight = 0
@@ -183,33 +186,67 @@ export function mountCometVault(previewArt) {
     if (sceneVisible && !document.hidden && !frame) frame = requestAnimationFrame(render)
   }
 
-  function scrollToOrbit(index, now = performance.now()) {
-    const start = window.scrollY
-    const distance = fields[index].offsetTop - start
-    scrollHandoff = null
-    if (!distance) return
-    const duration = Math.min(720, 340 + Math.abs(distance) * .32)
-    scrollHandoff = { index, start, direction: Math.sign(distance), startedAt: now, duration }
-    invalidate()
-  }
-
-  function advanceHandoff(now, scroll) {
-    if (!scrollHandoff) return scroll
-    const { index, start, direction, startedAt, duration } = scrollHandoff
-    const destination = fieldBounds[index].top
-    if ((scroll - lastScroll) * direction < -1 || (destination - scroll) * direction <= 0) {
-      scrollHandoff = null
-      return scroll
+  function limitScrollInput(input) {
+    const { event, deltaX, deltaY } = input
+    if (event.ctrlKey || (event.type === 'wheel' && Math.abs(deltaX) > Math.abs(deltaY))) return false
+    if (event.type === 'touchstart') {
+      lenis.userData = {}
+      wheelGesture = null
+      releasedForward = false
     }
-    const progress = Math.max(0, Math.min(1, (now - startedAt) / duration))
-    const next = Math.round(start + (destination - start) * (1 - (1 - progress) ** 2))
-    // Let momentum carry the scene farther and only supply the rest of the scroll.
-    if ((next - scroll) * direction > 0) window.scrollTo({ top: next, behavior: 'instant' })
-    if (progress === 1) scrollHandoff = null
-    return window.scrollY
+    if (event.type === 'touchend') releasedForward = deltaY > 0
+    if (event.type !== 'wheel' || !deltaY) return
+
+    const direction = Math.sign(deltaY)
+    const landing = lenis.userData.landing
+    if (wheelGesture?.direction !== direction || event.timeStamp - wheelGesture.lastInput > 180) {
+      const next = direction > 0 ? fieldBounds.findIndex(field => field.top > lenis.animatedScroll + 1) : -1
+      wheelGesture = { direction, next, lastInput: event.timeStamp }
+    }
+    wheelGesture.lastInput = event.timeStamp
+    const next = fieldBounds[wheelGesture.next]
+    const remaining = next ? Math.max(0, next.top - lenis.targetScroll) : Infinity
+    const distance = Math.min(Math.abs(deltaY) * .88, (height || innerHeight) * .72, remaining)
+    // Momentum in the same direction can finish at the selected batch. Reversing takes control back.
+    if ((landing !== undefined && direction === Math.sign(landing - lenis.animatedScroll)) || !distance) {
+      if (event.cancelable) event.preventDefault()
+      return false
+    }
+    input.deltaY = direction * distance
   }
 
-  function completeDepartingOrbit(now, poses, scrollingForward) {
+  function syncSmoothScroll() {
+    if (sceneVisible && !reduced.matches) {
+      lenis ??= new Lenis({
+        eventsTarget: sky,
+        lerp: .10,
+        syncTouch: true,
+        syncTouchLerp: .12,
+        touchInertiaExponent: 1.12,
+        virtualScroll: limitScrollInput,
+      })
+    } else {
+      lenis?.destroy()
+      lenis = null
+      wheelGesture = null
+      releasedForward = false
+    }
+  }
+
+  function scrollToOrbit(index, speed = 0) {
+    const destination = fields[index].offsetTop
+    const distance = Math.abs(destination - lenis.animatedScroll)
+    if (!distance) return
+    const duration = Math.min(1.05, .56 + distance / height * .49)
+    const slope = Math.min(2.5, speed * duration / distance)
+    lenis.scrollTo(destination, {
+      duration,
+      easing: t => t * t * (3 - 2 * t) + slope * t * (1 - t) ** 2,
+      userData: { landing: destination },
+    })
+  }
+
+  function completeDepartingOrbit(poses, speed) {
     const index = poses.findIndex(pose => pose && !pose.entering && pose.progress < 1)
     if (index === -1) {
       assistedOrbit = -1
@@ -218,9 +255,10 @@ export function mountCometVault(previewArt) {
     const batch = projects.filter(project => project.field === index)
     const visible = batch.reduce((sum, project) => sum + visibleShare(project, width, height, mastheadHeight), 0) / batch.length
     if (visible > .56 && assistedOrbit === index) assistedOrbit = -1
-    if (scrollingForward && !scrollHandoff && assistedOrbit !== index && visible <= .5) {
+    if ((speed > 0 || releasedForward) && !lenis.isTouching && lenis.userData.landing === undefined
+      && assistedOrbit !== index && visible <= .5) {
       assistedOrbit = index
-      scrollToOrbit(index + 1, now)
+      scrollToOrbit(index + 1, Math.max(0, speed))
     }
   }
 
@@ -321,11 +359,12 @@ export function mountCometVault(previewArt) {
       if (focusOnClose || !project.button.matches(':focus-visible')) return
       const bounds = project.button.getBoundingClientRect()
       if (project.inFlight || bounds.top < masthead.offsetHeight + 10 || bounds.bottom + 48 > window.innerHeight) {
-        scrollHandoff = null
         const field = fields[project.field]
         const [, top] = narrow.matches ? project.narrow : project.wide
         const within = Math.min(field.offsetHeight - window.innerHeight, field.offsetHeight * top / 100 - window.innerHeight * .55)
-        window.scrollTo({ top: field.offsetTop + Math.max(0, within), behavior: 'instant' })
+        const destination = field.offsetTop + Math.max(0, within)
+        if (lenis) lenis.scrollTo(destination, { immediate: true })
+        else window.scrollTo({ top: destination, behavior: 'instant' })
       }
       choose(project)
     })
@@ -385,7 +424,11 @@ export function mountCometVault(previewArt) {
       mastheadHeight = masthead.offsetHeight
       layoutDirty = false
     }
-    const scroll = advanceHandoff(now, window.scrollY)
+    if (lenis?.isScrolling === 'smooth' && Math.abs(lenis.animatedScroll - window.scrollY) > 1) {
+      lenis.scrollTo(window.scrollY, { immediate: true })
+    }
+    lenis?.raf(now)
+    const scroll = lenis?.animatedScroll ?? window.scrollY
     const spatial = mode === '3d'
     const compact = narrow.matches
     const ease = 1 - Math.exp(-step * 10)
@@ -447,7 +490,8 @@ export function mountCometVault(previewArt) {
       project.button.toggleAttribute('data-far', project.alpha < .15)
     }
 
-    if (!still) completeDepartingOrbit(now, poses, delta > 0)
+    if (lenis) completeDepartingOrbit(poses, delta / step)
+    releasedForward = false
 
     if (active && (active.alpha < .15 || active.y < mastheadHeight || active.y > height + active.r
       || active.x < -active.r || active.x > width + active.r)) {
@@ -511,7 +555,6 @@ export function mountCometVault(previewArt) {
   spaceCanvas.addEventListener('webglcontextlost', disableSpace)
 
   function showView(plates, transferFocus = false) {
-    scrollHandoff = null
     assistedOrbit = -1
     sceneVisible = !plates
     sky.hidden = plates
@@ -531,6 +574,7 @@ export function mountCometVault(previewArt) {
       const control = plates ? skySwitch : plateSwitch
       control.focus({ preventScroll: true })
     }
+    syncSmoothScroll()
     lastScroll = window.scrollY
   }
 
@@ -554,10 +598,6 @@ export function mountCometVault(previewArt) {
     invalidate()
   })
   window.addEventListener('scroll', invalidate, { passive: true })
-  window.addEventListener('wheel', event => {
-    if (scrollHandoff && event.deltaY * scrollHandoff.direction < 0) scrollHandoff = null
-  }, { passive: true })
-  window.addEventListener('touchstart', () => { scrollHandoff = null }, { passive: true })
   window.addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse') return
     pointerX = event.clientX / window.innerWidth * 2 - 1
@@ -565,8 +605,8 @@ export function mountCometVault(previewArt) {
     invalidate()
   }, { passive: true })
   reduced.addEventListener('change', () => {
+    syncSmoothScroll()
     if (reduced.matches) {
-      scrollHandoff = null
       if (closing) resetPreview()
       previewMotion?.cancel()
       previewMotion = null
@@ -581,8 +621,8 @@ export function mountCometVault(previewArt) {
     const target = document.querySelector(anchor.hash)
     target.tabIndex = -1
     target.focus({ preventScroll: true })
-    if (reduced.matches) target.scrollIntoView({ behavior: 'instant' })
-    else scrollToOrbit(fields.indexOf(target))
+    if (lenis) scrollToOrbit(fields.indexOf(target))
+    else target.scrollIntoView({ behavior: 'instant' })
   }))
 
   skySwitch.hidden = false
