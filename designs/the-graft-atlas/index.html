@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f3eedc" />
+    <title>The Graft Atlas · Family trees</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-view="ink">
+    <canvas id="dusk" aria-hidden="true"></canvas>
+    <header>
+      <a class="back" href="../" aria-label="Back to the vault">↶ <span>Vault</span></a>
+      <nav aria-label="Tree view">
+        <button id="inkMode" aria-pressed="true">
+          <i data-icon="leaf"></i> Herbarium <small>2D</small></button
+        ><span class="slash">/</span
+        ><button id="groveMode" aria-pressed="false">
+          <i data-icon="grove"></i> Night orchard <small>3D</small>
+        </button>
+      </nav>
+    </header>
+    <main>
+      <div class="intro">
+        <p class="kicker"><span class="seal">✳</span> A living genealogy</p>
+        <h1>The Graft<br /><em>Atlas.</em></h1>
+        <p id="viewNote">
+          Read a family from root to fruit.<br />Follow a graft into another tree.
+        </p>
+      </div>
+      <section class="stage" aria-label="Interactive family tree">
+        <div class="scene" id="scene">
+          <canvas id="engraving" aria-hidden="true"></canvas
+          ><canvas id="orchard" aria-hidden="true" hidden></canvas
+          ><svg
+            id="traceInk"
+            viewBox="0 0 960 610"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          ></svg
+          ><svg id="leaders" aria-hidden="true"></svg>
+          <div id="fruitHits"></div>
+          <div id="pins"></div>
+        </div>
+        <div class="stageTools" id="inkTools">
+          <button id="ancestors"><i data-icon="root"></i> Roots</button
+          ><span id="lens">All kin</span
+          ><button id="descendants"><i data-icon="fruit"></i> Fruit</button>
+        </div>
+        <div class="stageTools" id="orbitTools" hidden>
+          <button id="west" aria-label="Orbit left">⟲</button><span>Orbit the grove</span
+          ><button id="east" aria-label="Orbit right">⟳</button
+          ><button id="replay"><i data-icon="bud"></i> Replay growth</button>
+        </div>
+      </section>
+      <section class="family" aria-labelledby="familyTitle">
+        <p class="kicker" id="familyTag">Current family</p>
+        <h2 id="familyTitle"></h2>
+        <button class="byline" id="record"></button
+        ><button id="chooseUnion" class="relay" hidden>Choose graft ↗</button>
+        <div class="grafting">
+          <button id="add"><i data-icon="graft"></i><span>Add kin</span></button
+          ><button id="register"><i data-icon="register"></i><span>Family register</span></button
+          ><button id="unfold"><i data-icon="root"></i><span>Unfold tree</span></button>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span id="modeTitle">Herbarium</span><span class="footerline"></span><span id="counts"></span>
+    </footer>
+    <div id="news" role="status" aria-live="polite"></div>
+    <dialog id="sheet">
+      <div class="sheetScroll">
+        <button class="close" aria-label="Close">×</button>
+        <div class="sheetInner" id="sheetInner"></div>
+      </div>
+    </dialog>
+    <script type="module" src="./atlas.js"></script>
+  </body>
+</html>
