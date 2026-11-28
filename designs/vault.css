@@ -35,6 +35,13 @@
 .same-depth-plate .caption { gap: 12px; }
 .same-depth-plate h2 { font-size: clamp(36px, 6.5vw, 97px); }
 .same-depth-plate .open { flex: none; }
+
+.offcut-plate { margin-top: 22px; background: #1d352b; color: #fff3d9; }
+.offcut-plate img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.offcut-plate::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, #102019 0%, #1020198c 22%, transparent 57%, #10201952 100%); }
+.offcut-plate .caption { gap: 12px; }
+.offcut-plate .open { flex: none; }
 @media (max-width: 600px) {
   .same-depth-plate img { height: 66%; top: 13%; object-fit: contain; }
+  .offcut-plate img { object-fit: contain; }
 }

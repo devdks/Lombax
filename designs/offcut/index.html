@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#172a24">
+    <meta name="description" content="Plan cuts from standard-length boards, account for the saw blade, and save the offcuts you can actually use.">
+    <title>Offcut — Woodworking cut planner</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <header class="masthead shell">
+      <a class="back" href="../"><span aria-hidden="true">←</span> Design vault</a>
+      <button class="help" id="show-guide" type="button" aria-haspopup="dialog">How it works <span aria-hidden="true">?</span></button>
+    </header>
+
+    <main class="shell workbench">
+      <div class="intro">
+        <h1>Offcut<span aria-hidden="true">.</span></h1>
+        <div class="intro-copy">
+          <span class="workshop"><i aria-hidden="true"></i> Woodworking cut planner</span>
+          <p>Plan every cut.<br> Make the leftovers count.</p>
+        </div>
+      </div>
+
+      <section class="mat" id="board-plan" aria-labelledby="plan-title">
+        <header class="mat-header">
+          <h2 id="plan-title"><span class="sr-only">Board plan </span><span id="stock-count">3</span><span class="stock-word"> boards</span> × <span id="stock-length">2,400 mm</span></h2>
+          <div class="plan-actions">
+            <button type="button" id="print-plan" class="print" aria-label="Print plan">
+              <span class="print-icon" aria-hidden="true"></span><span class="print-word"> Print plan</span>
+            </button>
+            <button type="button" id="edit-list" class="plan-button" aria-haspopup="dialog">Edit cut list <span class="plan-arrow" aria-hidden="true"></span></button>
+          </div>
+        </header>
+
+        <div class="plan-key" aria-label="Board diagram key">
+          <span><i class="key-piece" aria-hidden="true"></i> Piece</span>
+          <span><i class="key-keeper" aria-hidden="true"></i> Keeper</span>
+          <span><i class="key-scrap" aria-hidden="true"></i> Scrap</span>
+          <span><i class="key-kerf" aria-hidden="true"></i><span id="kerf-reading">3 mm blade</span></span>
+        </div>
+
+        <div class="ruler" id="ruler" aria-hidden="true"></div>
+        <ol class="boards" id="boards" aria-label="Boards and cuts"></ol>
+        <nav class="board-pages" aria-label="Board pages" hidden>
+          <button id="earlier-boards" type="button" aria-label="Previous boards">←</button>
+          <span id="board-range" aria-live="polite"></span>
+          <button id="later-boards" type="button" aria-label="Next boards">→</button>
+        </nav>
+        <noscript><p>Enable JavaScript to calculate and draw your cut plan.</p></noscript>
+
+        <fieldset class="strategies" aria-describedby="tradeoff">
+          <legend>Choose what you keep</legend>
+          <p id="tradeoff"><span id="comparison">Both layouts use the fewest boards. </span><span id="keep-reading"></span></p>
+          <div class="strategy-options">
+            <label>
+              <input type="radio" name="strategy" value="long" checked>
+              <span class="strategy-choice">
+                <span class="choice-name">Longest offcut</span>
+                <span class="choice-result" id="long-result"></span>
+              </span>
+            </label>
+            <label>
+              <input type="radio" name="strategy" value="many">
+              <span class="strategy-choice">
+                <span class="choice-name">Most keepers</span>
+                <span class="choice-result" id="many-result"></span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+        <p class="sr-only" id="plan-announcement" role="status"></p>
+      </section>
+    </main>
+
+    <dialog class="ledger" id="cut-list" aria-labelledby="list-title">
+      <header class="ledger-header">
+        <div>
+          <h2 id="list-title">Cut list</h2>
+          <p>Start with the entryway bench or enter your own pieces.</p>
+        </div>
+        <button class="dialog-close" type="button" data-close aria-label="Close cut list" autofocus>×</button>
+      </header>
+
+      <form id="planner">
+        <fieldset class="stock-fields">
+          <legend>Material</legend>
+          <div class="stock-grid">
+            <label class="measure">Board length <span class="sr-only">in millimetres</span>
+              <span class="entry"><input name="stock" type="number" min="1" max="12000" step="0.1" inputmode="decimal" required><span aria-hidden="true">mm</span></span>
+            </label>
+            <label class="measure">Blade kerf <span class="sr-only">in millimetres</span>
+              <span class="entry"><input name="kerf" type="number" min="0" max="20" step="0.1" inputmode="decimal" required aria-describedby="stock-hint"><span aria-hidden="true">mm</span></span>
+            </label>
+            <label class="measure">Keep from <span class="sr-only">in millimetres</span>
+              <span class="entry"><input name="keep" type="number" min="1" max="12000" step="0.1" inputmode="decimal" required aria-describedby="stock-hint"><span aria-hidden="true">mm</span></span>
+            </label>
+          </div>
+          <p class="field-hint" id="stock-hint">Kerf is what the blade removes. Offcuts at or above your minimum are keepers.</p>
+        </fieldset>
+
+        <fieldset class="pieces-fields">
+          <legend>Pieces <span id="piece-count">7 total</span></legend>
+          <div class="cut-headings" aria-hidden="true"><span>Piece name</span><span>Length (mm)</span><span>Qty</span></div>
+          <div id="cut-rows"></div>
+          <button class="text-action add" id="add-cut" type="button"><span aria-hidden="true">+</span> Add piece</button>
+          <p class="field-hint" id="entry-limits">Up to 6 different pieces and 24 cuts per plan.</p>
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="plan-button" type="submit">Update plan <span class="plan-arrow" aria-hidden="true"></span></button>
+          <button class="text-action" id="reset-example" type="button">Load example</button>
+          <p id="form-message" role="status"></p>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="guide" id="guide" aria-labelledby="guide-title">
+      <header class="ledger-header">
+        <h2 id="guide-title">How Offcut works</h2>
+        <button class="dialog-close" type="button" data-close aria-label="Close instructions" autofocus>×</button>
+      </header>
+      <ol>
+        <li><strong>Enter your stock and pieces.</strong> Offcut finds the fewest equal-length boards needed for straight crosscuts. Enter the usable length after squaring the ends, and include the width your blade removes.</li>
+        <li><strong>Choose the leftovers you can use.</strong> Set the shortest length you’d keep. Compare saving one long offcut with saving as many pieces above your minimum as possible.</li>
+        <li><strong>Take the measurements to your saw.</strong> Open Cut marks on any board for positions measured from the same squared end, or print all the boards and marks together.</li>
+      </ol>
+    </dialog>
+
+    <dialog class="guide" id="marks-dialog" aria-labelledby="marks-title">
+      <header class="ledger-header">
+        <h2 id="marks-title">Cut marks</h2>
+        <button class="dialog-close" type="button" data-close aria-label="Close cut marks" autofocus>×</button>
+      </header>
+      <div id="marks-content"></div>
+    </dialog>
+
+    <template id="cut-template">
+      <div class="cut-row">
+        <label class="cut-name"><span class="sr-only">Piece name</span><span class="cut-letter" aria-hidden="true"></span><input name="name" type="text" maxlength="32" required></label>
+        <label><span class="sr-only">Length in millimetres</span><input name="length" type="number" min="1" max="12000" step="0.1" inputmode="decimal" required></label>
+        <label><span class="sr-only">Quantity</span><input name="quantity" type="number" min="1" max="24" step="1" inputmode="numeric" required></label>
+        <button class="remove" type="button" aria-label="Remove piece">×</button>
+      </div>
+    </template>
+    <script type="module" src="./study.js"></script>
+  </body>
+</html>
