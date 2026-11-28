@@ -24,4 +24,8 @@ Keep the handoffs short. A sentence, a worked example, or an annotated sketch ca
 
 ## The quality bar
 
-Masterpiece-level work is the ambition. A finished entry earns its place through a worthwhile purpose, an interaction the subject makes possible, and a polished experience that visitors can use. Each entry gives us a chance to improve the next one. After review, record what made a visitor’s task clearer, where the experience still fell short, and which lesson is worth testing on a different subject.
+Masterpiece-level work is the ambition. A finished entry earns its place through a worthwhile purpose, an interaction the subject makes possible, and a polished experience that visitors can use.
+
+## When to update the guides
+
+Update a guide when we’ve put a new idea into practice in an entry and can point to how it brought the work closer to that ambition. In the relevant guide, record what changed, what it improved, and where the lesson could help again. Link to the entry so we can revisit the evidence as the guides evolve.
